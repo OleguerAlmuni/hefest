@@ -144,12 +144,12 @@ void* platform_zero_memory(void* block, u64 size) {
     return memset(block, 0, size);
 }
 
-void* platform_copy_memory(void* dest, const void* source, u64 size) {
-    return memcpy(dest, source, size);
+void* platform_copy_memory(void* destination, const void* source, u64 size) {
+    return memcpy(destination, source, size);
 }
 
-void* platform_set_memory(void* dest, i32 value, u64 size) {
-    return memset(dest, value, size);
+void* platform_set_memory(void* destination, i32 value, u64 size) {
+    return memset(destination, value, size);
 }
 
 void platform_console_write(const char* message, u8 colour) {
