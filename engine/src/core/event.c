@@ -2,6 +2,7 @@
 
 #include "core/hmemory.h"
 #include "containers/darray.h"
+#include "core/logger.h"
 
 typedef struct registered_event {
     void* listener;
@@ -112,7 +113,7 @@ b8 event_fire(u16 code, void* sender, event_context context) {
     }
 
     u64 registered_count = darray_length(state.registered[code].events);
-    for (u64 i = 1; i < registered_count; ++i) {
+    for (u64 i = 0; i < registered_count; ++i) {
         registered_event event = state.registered[code].events[i];
         if (event.callback(code, sender, event.listener, context)) {
             // Message has been handled, do not send to other listeners.
