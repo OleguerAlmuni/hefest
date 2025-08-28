@@ -1,6 +1,7 @@
 #include "hmemory.h"
 
 #include "core/logger.h"
+#include "core/hstring.h"
 #include "platform/platform.h"
 
 // TODO: Custom string library.
@@ -110,6 +111,6 @@ char* get_memory_usage_str() {
         offset += lenght;
     }
 
-    char* out_string = _strdup(buffer);
+    char* out_string = string_duplicate(buffer);
     return out_string;
 }
