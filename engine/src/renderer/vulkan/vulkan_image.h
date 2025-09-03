@@ -1,7 +1,5 @@
 #pragma once
 
-#include "defines.h"
-
 #include "vulkan_types.inl"
 
 void vulkan_image_create(

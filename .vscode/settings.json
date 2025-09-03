@@ -50,7 +50,8 @@
         "windowsx.h": "c",
         "vulkan_platform.h": "c",
         "renderer_frontend.h": "c",
-        "defines.h": "c"
+        "defines.h": "c",
+        "asserts.h": "c"
     },
     "editor.inlineSuggest.enabled": false
 }
