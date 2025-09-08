@@ -67,7 +67,7 @@ HAPI void* _darray_pop_at(void* array, u64 index, void* destination);
     _darray_field_get(array, DARRAY_CAPACITY)
 
 #define darray_length(array) \
-    _darray_field_get(array, DARRAY_LENGTH);
+    _darray_field_get(array, DARRAY_LENGTH)
 
 #define darray_stride(array) \
     _darray_field_get(array, DARRAY_STRIDE)

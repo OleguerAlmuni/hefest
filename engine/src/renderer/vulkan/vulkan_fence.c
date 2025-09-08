@@ -47,6 +47,7 @@ b8 vulkan_fence_wait(vulkan_context* context, vulkan_fence* fence, u64 timeout_n
         switch (result) {
             case VK_SUCCESS:
                 fence->is_signaled = TRUE;
+                return TRUE;
                 break;
             case VK_TIMEOUT:
                 HWARN("vk_fence_wait - Timed Out.");

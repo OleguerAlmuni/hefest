@@ -9,7 +9,7 @@ void vulkan_command_buffer_allocate(
     vulkan_command_buffer* out_command_buffer
     ) {
 
-    hzero_memory(out_command_buffer, sizeof(out_command_buffer));
+    hzero_memory(out_command_buffer, sizeof(*out_command_buffer));
 
     VkCommandBufferAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
     allocate_info.commandPool = pool;
@@ -69,11 +69,15 @@ void vulkan_command_buffer_end(vulkan_command_buffer* command_buffer) {
     command_buffer->state = COMMAND_BUFFER_STATE_RECORDING_ENDED;
 }
 
-void vulkan_command_buffer_update_submitted(vulkan_command_buffer* command_buffer) {
+void vulkan_command_buffer_update_submitted(vulkan_command_buffer* command_buffer) { 
     command_buffer->state = COMMAND_BUFFER_STATE_SUBMITTED;
 }
 
 void vulkan_command_buffer_reset(vulkan_command_buffer* command_buffer) {
+    // Safe to reset only AFTER the associated fence has been waited.
+    if (command_buffer->handle) {
+        VK_CHECK(vkResetCommandBuffer(command_buffer->handle, 0));
+    }
     command_buffer->state = COMMAND_BUFFER_STATE_READY;
 }
 
