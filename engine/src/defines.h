@@ -100,3 +100,12 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 
 #define HCLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max \
                                                                       : value;
+
+// Inlining
+#ifdef _MSC_VER
+#define HFSTINLINE __forceinline
+#define HFSTNOINLINE __declspec(noinline)
+#else
+#define HFSTINLINE static inline
+#define HFSTNOINLINE
+#endif
