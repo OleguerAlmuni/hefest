@@ -84,18 +84,10 @@ STATIC_ASSERT(sizeof(f64) == 8, "Expected f64 to be 8 bytes.");
 
 #ifdef HEXPORT
 // Exports
-#ifdef _MSC_VER
 #define HAPI __declspec(dllexport)
 #else
-#define HAPI __attribute__((visibility("default")))
-#endif
-#else
 // Imports
-#ifdef _MSC_VER
 #define HAPI __declspec(dllimport)
-#else
-#define HAPI
-#endif
 #endif
 
 #define HCLAMP(value, min, max) (value <= min) ? min : (value >= max) ? max \

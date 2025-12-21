@@ -6,6 +6,7 @@ typedef enum memory_tag {
     // For temporary use. Should be assigned one of the below or have a new tag created.
     MEMORY_TAG_UNKNOWN,
     MEMORY_TAG_ARRAY,
+    MEMORY_TAG_LINEAR_ALLOCATOR,
     MEMORY_TAG_DARRAY,
     MEMORY_TAG_DICT,
     MEMORY_TAG_RING_QUEUE,
@@ -25,9 +26,9 @@ typedef enum memory_tag {
     MEMORY_TAG_MAX_TAGS
 } memory_tag;
 
-HAPI void initialize_memory();
+HAPI void initialize_memory(u64* memory_requirement, void* state);
 
-HAPI void shutdown_memory();
+HAPI void shutdown_memory(void* state);
 
 HAPI void* hallocate(u64 size, memory_tag tag);
 
@@ -40,3 +41,5 @@ HAPI void* hcopy_memory(void* destination, const void* source, u64 size);
 HAPI void* hset_memory(void* destination, i32 value, u64 size);
 
 HAPI char* get_memory_usage_str();
+
+HAPI u64 get_memory_alloc_count();
