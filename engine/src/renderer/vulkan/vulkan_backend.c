@@ -224,6 +224,8 @@ void vulkan_renderer_backend_shutdown(renderer_backend* backend) {
 
     // Destroy in the opposite order of creation.
 
+    vulkan_object_shader_destroy(&context, &context.object_shader);
+
     // Sync objects
     // Ensure GPU idle before tearing down sync objects.
     vkDeviceWaitIdle(context.device.logical_device);
