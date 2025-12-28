@@ -141,7 +141,7 @@ void vulkan_buffer_bind(vulkan_context* context, vulkan_buffer* buffer, u64 offs
 
 void* vulkan_buffer_lock_memory(vulkan_context* context, vulkan_buffer* buffer, u64 offset, u64 size, u32 flags) {
     void* data;
-    VK_CHECK(vkMapMemory(context->device.logical_device, buffer->memory, offset, size, flags, &data));
+    VK_CHECK(vkMapMemory(context->device.logical_device, buffer->memory, offset, size, 0, &data));
     return data;
 }
 
@@ -151,7 +151,7 @@ void vulkan_buffer_unlock_memory(vulkan_context* context, vulkan_buffer* buffer)
 
 void vulkan_buffer_load_data(vulkan_context* context, vulkan_buffer* buffer, u64 offset, u64 size, u32 flags, const void* data) {
     void* data_ptr;
-    VK_CHECK(vkMapMemory(context->device.logical_device, buffer->memory, offset, size, flags, &data_ptr));
+    VK_CHECK(vkMapMemory(context->device.logical_device, buffer->memory, offset, size, 0, &data_ptr));
     hcopy_memory(data_ptr, data, size);
     vkUnmapMemory(context->device.logical_device, buffer->memory);
 }
