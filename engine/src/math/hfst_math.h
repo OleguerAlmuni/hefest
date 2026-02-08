@@ -738,7 +738,7 @@ HFSTINLINE mat4 mat4_identity() {
  * @param matrix_2 The second matrix to be multiplied.
  * @return The result of the matrix multiplication.
  */
-HFSTINLINE mat4 mat4_mul(mat4 matrix_1, mat4 matrix_2) {
+HFSTINLINE mat4 mat4_multiply(mat4 matrix_1, mat4 matrix_2) {
     mat4 out_matrix = mat4_identity();
 
     const f32* m1_ptr = matrix_1.data;
@@ -1000,8 +1000,8 @@ HFSTINLINE mat4 mat4_euler_xyz(f32 x_radians, f32 y_radians, f32 z_radians) {
     mat4 rx = mat4_euler_x(x_radians);
     mat4 ry = mat4_euler_y(y_radians);
     mat4 rz = mat4_euler_z(z_radians);
-    mat4 out_matrix = mat4_mul(rx, ry);
-    out_matrix = mat4_mul(out_matrix, rz);
+    mat4 out_matrix = mat4_multiply(rx, ry);
+    out_matrix = mat4_multiply(out_matrix, rz);
     return out_matrix;
 }
 
