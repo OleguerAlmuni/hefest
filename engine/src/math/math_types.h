@@ -70,4 +70,5 @@ typedef union mat4_u {
 
 typedef struct vertex_3d {
     vec3 position;
+    vec2 texture_coordinates;
 } vertex_3d;
