@@ -9,6 +9,14 @@
 
 #include "resources/resource_types.h"
 
+// TODO: temporary
+#include "core/hstring.h"
+#include "core/hmemory.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "vendor/stb_image.h"
+// TODO: end temporary
+
 typedef struct renderer_system_state {
     renderer_backend backend;
     mat4 projection;
@@ -17,9 +25,78 @@ typedef struct renderer_system_state {
     f32 far_clip;
 
     texture default_texture;
+
+    // TODO: temporary
+    texture test_diffuse;
+    // TODO: end temporary
 } renderer_system_state;
 
 static renderer_system_state* state_ptr;
+
+void create_texture(texture* t) {
+    hzero_memory(t, sizeof(texture));
+    t->generation = INVALID_ID;
+}
+
+b8 load_texture(const char* texture_name, texture* t) {
+    // TODO: Should be able to be located anywhere.
+    char* format_string = "assets/textures/%s.%s";
+    const i32 required_channel_count = 4;
+    stbi_set_flip_vertically_on_load(true);
+    char full_file_path[512];
+
+    // TODO: Try different extensions.
+    string_format(full_file_path, format_string, texture_name, "png");
+
+    // Use a temp texture to load into.
+    texture temp_texture;
+
+    u8* data = stbi_load(
+        full_file_path,
+        (i32*)&temp_texture.width,
+        (i32*)&temp_texture.height,
+        (i32*)&temp_texture.channel_count,
+        required_channel_count
+    );
+
+    temp_texture.channel_count = required_channel_count;
+
+    if (data) {
+        u32 current_generation = t->generation;
+        t->generation = INVALID_ID;
+
+        u64 total_size = temp_texture.width * temp_texture.height * temp_texture.channel_count;
+        // Check for transparency.
+        b32 has_transparency = false;
+        for (u64 i = 0; i < total_size; i += required_channel_count) {
+            u8 a = data[i + 3];
+            if (a < 255) {
+                has_transparency = true;
+                break;
+            }
+        }
+
+        if (stbi_failure_reason()) {
+            HWARN("load_texture() failed to load file '%s': %s", full_file_path, stbi_failure_reason());
+        }
+
+        // Acquire internal texture resources and upload it to the GPU.
+        renderer_create_texture(
+            texture_name,
+            true,
+            temp_texture.width,
+            temp_texture.height,
+            temp_texture.channel_count,
+            data,
+            has_transparency,
+            &temp_texture
+        );
+
+        // Take a copy of the old texture.
+        texture old = *t; 
+
+    }
+}
 
 b8 renderer_system_initialize(u64* memory_requirement, void* state, const char* application_name) {
     *memory_requirement = sizeof(renderer_system_state);
