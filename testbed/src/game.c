@@ -1,8 +1,11 @@
 #include "game.h"
 
 #include <core/logger.h>
-#include <core/input.h>
 #include <core/hmemory.h>
+
+#include <core/input.h>
+#include <core/event.h>
+
 #include <math/hfst_math.h>
 
 // HACK: This should not be available outside the engine.
@@ -50,13 +53,20 @@ b8 game_initialize(game* game_inst) {
 }
 
 b8 game_update(game* game_inst, f32 delta_time) {
-
     static u64 alloc_count = 0;
     u64 prev_alloc_count = alloc_count;
     alloc_count = get_memory_alloc_count();
     if (input_is_key_up('M') && input_was_key_down('M')) {
         HDEBUG("Allocations: %llu (%llu this frame)", alloc_count, alloc_count - prev_alloc_count);
     }
+
+    // TODO: temp
+    if (input_is_key_up('T') && input_was_key_down('T')) {
+        HDEBUG("Swapping texture!");
+        event_context context = {};
+        event_fire(EVENT_CODE_DEBUG0, game_inst, context);
+    }
+    // TODO: end temp
 
     game_state* state = (game_state*)game_inst->state;
 

@@ -245,7 +245,7 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
 
     const f32 f = 10.0f;
 
-    verts[0].position.x = 0.0 * f;
+    verts[0].position.x = -0.5 * f;
     verts[0].position.y = -0.5 * f;
     verts[0].texture_coordinates.x = 0.0f;
     verts[0].texture_coordinates.y = 0.0f;
@@ -255,8 +255,7 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
     verts[1].texture_coordinates.x = 1.0f;
     verts[1].texture_coordinates.y = 1.0f;
 
-
-    verts[2].position.x = 0.0 * f;
+    verts[2].position.x = -0.5 * f;
     verts[2].position.y = 0.5 * f;
     verts[2].texture_coordinates.x = 0.0f;
     verts[2].texture_coordinates.y = 1.0f;
