@@ -1,0 +1,7 @@
+CompileFlags:
+  Add:
+    - -Iengine/src
+    - -D_DEBUG
+    - -DHPLATFORM_LINUX
+    - -DHEXPORT
+  Compiler: clang
