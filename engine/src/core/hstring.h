@@ -8,7 +8,10 @@ HAPI u64 string_length(const char* str);
 HAPI char* string_duplicate(const char* str);
 
 // Case-sensitive string comparison. True if same, otherwise false.
-HAPI b8 strings_equal(const char* str1, const char* str2);
+HAPI b8 strings_equal(const char* str0, const char* str1);
+
+// Case-insensitive string comparison. True if same, otherwise false.
+HAPI b8 strings_equal_insensitive(const char* str0, const char* str1);
 
 // Performs string formatting to dest given format string and parameters.
 HAPI i32 string_format(char* dest, const char* format, ...);
