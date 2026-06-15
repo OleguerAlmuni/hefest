@@ -2,6 +2,7 @@
 
 #include "core/logger.h"
 #include "core/hmemory.h"
+#include "core/asserts.h"
 #include "vulkan_device.h"
 #include "vulkan_image.h"
 
@@ -134,6 +135,16 @@ void create(vulkan_context* context, u32 width, u32 height, vulkan_swapchain* sw
     swapchain_extent.width = HCLAMP(swapchain_extent.width, min.width, max.width);
     swapchain_extent.height = HCLAMP(swapchain_extent.height, min.height, max.height);
 
+    // The surface may force an extent that differs from the requested size (e.g. a
+    // compositor using fractional scaling or window decorations). The swapchain
+    // images and depth attachment below are sized from this clamped extent, so the
+    // framebuffer dimensions must follow it; otherwise the renderpass/framebuffers
+    // are built at the requested size and mismatch the attachments. Propagate the
+    // final extent back so all downstream sizing (renderpass, framebuffers,
+    // viewport, scissor) stays consistent with the actual images.
+    context->framebuffer_width = swapchain_extent.width;
+    context->framebuffer_height = swapchain_extent.height;
+
     u32 image_count = context->device.swapchain_support.capabilities.minImageCount + 1;
     if (context->device.swapchain_support.capabilities.maxImageCount > 0 &&
         image_count > context->device.swapchain_support.capabilities.maxImageCount) {
@@ -185,6 +196,11 @@ void create(vulkan_context* context, u32 width, u32 height, vulkan_swapchain* sw
     // Images
     swapchain->image_count = 0;
     VK_CHECK(vkGetSwapchainImagesKHR(context->device.logical_device, swapchain->handle, &swapchain->image_count, 0));
+    // Per-image resources elsewhere index fixed-size arrays by image index, so the
+    // image count must stay within the supported bound.
+    HASSERT_MSG(
+        swapchain->image_count <= VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT,
+        "Swapchain image count exceeds VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT.");
     if (!swapchain->images) {
         swapchain->images = (VkImage*)hallocate(sizeof(VkImage) * swapchain->image_count, MEMORY_TAG_RENDERER);
     }

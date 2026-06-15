@@ -702,9 +702,12 @@ b8 recreate_swapchain(renderer_backend* backend) {
         cached_framebuffer_height,
         &context.swapchain);
 
-    // Sync the framebuffer size with the cached sizes.
-    context.framebuffer_width = cached_framebuffer_width;
-    context.framebuffer_height = cached_framebuffer_height;
+    // vulkan_swapchain_recreate() clamps the requested (cached) size to the surface's
+    // actual extent and writes the result back into context.framebuffer_width/height,
+    // so the renderpass is synced from those final values rather than the requested
+    // ones. On platforms where the surface honors the requested size (e.g. Win32) the
+    // two are identical; on a compositor that forces a different extent they are not,
+    // and using the requested size here would mismatch the swapchain attachments.
     context.main_renderpass.w = context.framebuffer_width;
     context.main_renderpass.h = context.framebuffer_height;
     cached_framebuffer_width = 0;
@@ -892,7 +895,10 @@ void vulkan_renderer_create_texture(
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.anisotropyEnable = VK_TRUE;
-    sampler_info.maxAnisotropy = 16;
+    // Clamp to the device limit; integrated GPUs may support fewer than 16 samples.
+    sampler_info.maxAnisotropy = context.device.properties.limits.maxSamplerAnisotropy < 16
+        ? context.device.properties.limits.maxSamplerAnisotropy
+        : 16;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.unnormalizedCoordinates = VK_FALSE;
     sampler_info.compareEnable = VK_FALSE;

@@ -87,6 +87,12 @@ typedef struct vulkan_framebuffer {
     vulkan_renderpass* renderpass;
 } vulkan_framebuffer;
 
+// Upper bound on the number of images a swapchain may report. The driver decides
+// the actual count (vkGetSwapchainImagesKHR), which can exceed the requested
+// minimum and varies by device/driver, so per-image resources are sized at runtime
+// from swapchain.image_count and only fixed-size arrays are bounded by this.
+#define VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT 8
+
 typedef struct vulkan_swapchain {
     VkSurfaceFormatKHR image_format;
     u8 max_frames_in_flight;
@@ -136,16 +142,16 @@ typedef struct vulkan_pipeline {
 #define OBJECT_SHADER_STAGE_COUNT 2
 
 typedef struct vulkan_descriptor_state {
-    // One per frame
-    u32 generations[3];
-    u32 ids[3];
+    // One per swapchain image (indexed by image index).
+    u32 generations[VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT];
+    u32 ids[VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT];
 } vulkan_descriptor_state;
 
 #define VULKAN_OBJECT_SHADER_DESCRIPTOR_COUNT 2
 
 typedef struct vulkan_object_shader_object_state {
-    // Per frame
-    VkDescriptorSet descriptor_sets[3];
+    // One per swapchain image (indexed by image index).
+    VkDescriptorSet descriptor_sets[VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT];
 
     // Per descriptor
     vulkan_descriptor_state descriptor_states[VULKAN_OBJECT_SHADER_DESCRIPTOR_COUNT];
@@ -161,8 +167,9 @@ typedef struct vulkan_material_shader {
     VkDescriptorPool global_descriptor_pool;
     VkDescriptorSetLayout global_descriptor_set_layout;
 
-    // One descriptor set per frame - max 3 for triple-buffering.
-    VkDescriptorSet global_descriptor_sets[3];
+    // One descriptor set per swapchain image. Sized to the maximum supported image
+    // count; only swapchain.image_count entries are actually allocated and used.
+    VkDescriptorSet global_descriptor_sets[VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT];
 
     // Global uniform object.
     global_uniform_object global_ubo;

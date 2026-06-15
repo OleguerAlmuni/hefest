@@ -271,93 +271,109 @@ b8 select_physical_device(vulkan_context* context) {
 
     VkPhysicalDevice physical_devices[VULKAN_MAX_PHYSICAL_DEVICE_COUNT];
     VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &physical_device_count, physical_devices));
-    for (u32 i = 0; i < physical_device_count; ++i) {
-        VkPhysicalDeviceProperties properties;
-        vkGetPhysicalDeviceProperties(physical_devices[i], &properties);
+    // TODO: These requirements should probably be driven by engine configuration.
+    vulkan_physical_device_requirements requirements = {};
+    requirements.graphics = true;
+    requirements.present = true;
+    requirements.transfer = true;
+    // NOTE: Enable this if compute will be required.
+    // requirement.compute = true;
+    requirements.sampler_anistropy = true;
+    // Prefer a discrete GPU, but fall back to a non-discrete device (e.g. an
+    // integrated GPU on a laptop) in the second pass below rather than failing.
+    requirements.discrete_gpu = true;
+    requirements.device_extension_names = darray_create(const char*);
+    darray_push(requirements.device_extension_names, &VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 
-        VkPhysicalDeviceFeatures features;
-        vkGetPhysicalDeviceFeatures(physical_devices[i], &features);
+    // Two-pass selection: the first pass requires a discrete GPU. If no available
+    // device qualifies, the requirement is relaxed and a second pass accepts any
+    // otherwise-suitable device. This keeps discrete GPUs preferred where present
+    // while still allowing the engine to run on integrated-only hardware.
+    for (u32 pass = 0; pass < 2 && !context->device.physical_device; ++pass) {
+        if (pass == 1) {
+            HINFO("No discrete GPU found. Falling back to a non-discrete device.");
+            requirements.discrete_gpu = false;
+        }
 
-        VkPhysicalDeviceMemoryProperties memory;
-        vkGetPhysicalDeviceMemoryProperties(physical_devices[i], &memory);
+        for (u32 i = 0; i < physical_device_count; ++i) {
+            VkPhysicalDeviceProperties properties;
+            vkGetPhysicalDeviceProperties(physical_devices[i], &properties);
 
-        // TODO: These requirements should probably be driven by engine configuration.
-        vulkan_physical_device_requirements requirements = {};
-        requirements.graphics = true;
-        requirements.present = true;
-        requirements.transfer = true;
-        // NOTE: Enable this if compute will be required.
-        // requirement.compute = true;
-        requirements.sampler_anistropy = true;
-        requirements.discrete_gpu = true;
-        requirements.device_extension_names = darray_create(const char*);
-        darray_push(requirements.device_extension_names, &VK_KHR_SWAPCHAIN_EXTENSION_NAME);
+            VkPhysicalDeviceFeatures features;
+            vkGetPhysicalDeviceFeatures(physical_devices[i], &features);
 
-        vulkan_physical_device_queue_family_info queue_info = {};
-        b8 result = physical_device_meets_requirements(
-            physical_devices[i],
-            context->surface,
-            &properties,
-            &features,
-            &requirements,
-            &queue_info,
-            &context->device.swapchain_support);
+            VkPhysicalDeviceMemoryProperties memory;
+            vkGetPhysicalDeviceMemoryProperties(physical_devices[i], &memory);
 
-        if (result) {
-            HINFO("Selected device: '%s'.", properties.deviceName);
-            // GPU type, etc.
-            switch (properties.deviceType) {
-                default:
-                case VK_PHYSICAL_DEVICE_TYPE_OTHER:
-                    HINFO("GPU Type is Unknown.");
-                    break;
-                case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
-                    HINFO("GPU type is Integrated");
-                    break;
-                case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
-                    HINFO("GPU Type is Discrete.");
-                    break;
-                case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
-                    HINFO("GPU type is Virtual");
-                    break;
-                case VK_PHYSICAL_DEVICE_TYPE_CPU:
-                    HINFO("GPU Type is CPU.");
-                    break;
-            }
+            vulkan_physical_device_queue_family_info queue_info = {};
+            b8 result = physical_device_meets_requirements(
+                physical_devices[i],
+                context->surface,
+                &properties,
+                &features,
+                &requirements,
+                &queue_info,
+                &context->device.swapchain_support);
 
-            HINFO("GPU Driver Version: &d.%d.%d",
-                VK_VERSION_MAJOR(properties.driverVersion),
-                VK_VERSION_MINOR(properties.driverVersion),
-                VK_VERSION_PATCH(properties.driverVersion));
-
-            HINFO("Vulkan API Version: &d.%d.%d",
-                VK_VERSION_MAJOR(properties.apiVersion),
-                VK_VERSION_MINOR(properties.apiVersion),
-                VK_VERSION_PATCH(properties.apiVersion));
-
-            // Memory information
-            for (u32 j = 0; j < memory.memoryHeapCount; ++j) {
-                f32 memory_size_gib = (((f32)memory.memoryHeaps[j].size) / 1024.0f / 1024.0f / 1024.0f);
-                if (memory.memoryHeaps[j].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
-                    HINFO("Local GPU Memory: %.2fGiB", memory_size_gib);
-                } else {
-                    HINFO("Shared System Memory: %.2fGiB", memory_size_gib);
+            if (result) {
+                HINFO("Selected device: '%s'.", properties.deviceName);
+                // GPU type, etc.
+                switch (properties.deviceType) {
+                    default:
+                    case VK_PHYSICAL_DEVICE_TYPE_OTHER:
+                        HINFO("GPU Type is Unknown.");
+                        break;
+                    case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+                        HINFO("GPU type is Integrated");
+                        break;
+                    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+                        HINFO("GPU Type is Discrete.");
+                        break;
+                    case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU:
+                        HINFO("GPU type is Virtual");
+                        break;
+                    case VK_PHYSICAL_DEVICE_TYPE_CPU:
+                        HINFO("GPU Type is CPU.");
+                        break;
                 }
+
+                HINFO("GPU Driver Version: %d.%d.%d",
+                    VK_VERSION_MAJOR(properties.driverVersion),
+                    VK_VERSION_MINOR(properties.driverVersion),
+                    VK_VERSION_PATCH(properties.driverVersion));
+
+                HINFO("Vulkan API Version: %d.%d.%d",
+                    VK_VERSION_MAJOR(properties.apiVersion),
+                    VK_VERSION_MINOR(properties.apiVersion),
+                    VK_VERSION_PATCH(properties.apiVersion));
+
+                // Memory information
+                for (u32 j = 0; j < memory.memoryHeapCount; ++j) {
+                    f32 memory_size_gib = (((f32)memory.memoryHeaps[j].size) / 1024.0f / 1024.0f / 1024.0f);
+                    if (memory.memoryHeaps[j].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) {
+                        HINFO("Local GPU Memory: %.2fGiB", memory_size_gib);
+                    } else {
+                        HINFO("Shared System Memory: %.2fGiB", memory_size_gib);
+                    }
+                }
+
+                context->device.physical_device = physical_devices[i];
+                context->device.graphics_queue_index = queue_info.graphics_family_index;
+                context->device.present_queue_index = queue_info.present_family_index;
+                context->device.transfer_queue_index = queue_info.transfer_family_index;
+                // NOTE: Set compute index here if needed.
+
+                // Keep a copy of properties, features and memory for later use.
+                context->device.properties = properties;
+                context->device.features = features;
+                context->device.memory = memory;
+                break;
             }
-
-            context->device.physical_device = physical_devices[i];
-            context->device.graphics_queue_index = queue_info.graphics_family_index;
-            context->device.present_queue_index = queue_info.present_family_index;
-            context->device.transfer_queue_index = queue_info.transfer_family_index;
-            // NOTE: Set compute index here if needed.
-
-            // Keep a copy of properties, features and memory for later use.
-            context->device.properties = properties;
-            context->device.features = features;
-            context->device.memory = memory;
-            break;
         }
     }
+
+    // Requirements are no longer needed once selection is complete.
+    darray_destroy(requirements.device_extension_names);
 
     // Ensure a device was selected.
     if (!context->device.physical_device) {

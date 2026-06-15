@@ -40,14 +40,17 @@ b8 vulkan_material_shader_create(vulkan_context* context, vulkan_material_shader
     VK_CHECK(vkCreateDescriptorSetLayout(context->device.logical_device, &global_layout_info, context->allocator, &out_shader->global_descriptor_set_layout));
 
     // Global descriptor pool: Used for global items such as view/projection matrix.
+    // One descriptor set is used per swapchain image (indexed by image_index), so
+    // the pool is sized to the actual swapchain image count rather than the frames
+    // in flight, which may be smaller depending on the device/driver.
     VkDescriptorPoolSize global_pool_size;
     global_pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    global_pool_size.descriptorCount = context->swapchain.max_frames_in_flight;
+    global_pool_size.descriptorCount = context->swapchain.image_count;
 
     VkDescriptorPoolCreateInfo global_pool_create_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
     global_pool_create_info.poolSizeCount = 1;
     global_pool_create_info.pPoolSizes = &global_pool_size;
-    global_pool_create_info.maxSets = context->swapchain.max_frames_in_flight;
+    global_pool_create_info.maxSets = context->swapchain.image_count;
     global_pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
     VK_CHECK(vkCreateDescriptorPool(context->device.logical_device, &global_pool_create_info, context->allocator, &out_shader->global_descriptor_pool));
     
@@ -161,10 +164,11 @@ b8 vulkan_material_shader_create(vulkan_context* context, vulkan_material_shader
         return false;
     }
 
-    // Create uniform buffer.
+    // Create uniform buffer. One global_uniform_object slot is used per swapchain
+    // image (indexed by image_index), so the buffer holds image_count slots.
     if (!vulkan_buffer_create(
         context,
-        sizeof(global_uniform_object) * 3,
+        sizeof(global_uniform_object) * context->swapchain.image_count,
         VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
         true,
@@ -174,16 +178,16 @@ b8 vulkan_material_shader_create(vulkan_context* context, vulkan_material_shader
         return false;
     }
 
-    // Allocate global descriptor sets.
-    u32 max_frames = context->swapchain.max_frames_in_flight;
-    VkDescriptorSetLayout* global_layouts = hallocate(sizeof(VkDescriptorSetLayout) * max_frames, MEMORY_TAG_RENDERER);
-    for (u32 i = 0; i < max_frames; ++i) {
+    // Allocate one global descriptor set per swapchain image.
+    u32 image_count = context->swapchain.image_count;
+    VkDescriptorSetLayout* global_layouts = hallocate(sizeof(VkDescriptorSetLayout) * image_count, MEMORY_TAG_RENDERER);
+    for (u32 i = 0; i < image_count; ++i) {
         global_layouts[i] = out_shader->global_descriptor_set_layout;
     }
 
     VkDescriptorSetAllocateInfo alloc_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
     alloc_info.descriptorPool = out_shader->global_descriptor_pool;
-    alloc_info.descriptorSetCount = max_frames;
+    alloc_info.descriptorSetCount = image_count;
     alloc_info.pSetLayouts = global_layouts;
     VK_CHECK(vkAllocateDescriptorSets(context->device.logical_device, &alloc_info, out_shader->global_descriptor_sets));
 
@@ -201,7 +205,7 @@ b8 vulkan_material_shader_create(vulkan_context* context, vulkan_material_shader
     }
 
     // Free the temporary layout array.
-    hfree(global_layouts, sizeof(VkDescriptorSetLayout) * max_frames, MEMORY_TAG_RENDERER);
+    hfree(global_layouts, sizeof(VkDescriptorSetLayout) * image_count, MEMORY_TAG_RENDERER);
 
     return true;
 }
@@ -381,24 +385,24 @@ b8 vulkan_material_shader_acquire_resources(vulkan_context* context, struct vulk
     shader->object_uniform_buffer_index++;
 
     u32 object_id = *out_object_id;
+    u32 image_count = context->swapchain.image_count;
     vulkan_object_shader_object_state* object_state = &shader->object_states[object_id];
     for (u32 i = 0; i < VULKAN_OBJECT_SHADER_DESCRIPTOR_COUNT; ++i) {
-        for (u32 j = 0; j < 3; ++j) {
+        for (u32 j = 0; j < image_count; ++j) {
             object_state->descriptor_states[i].generations[j] = INVALID_ID;
             object_state->descriptor_states[i].ids[j] = INVALID_ID;
         }
     }
 
-    // Allocate descriptor sets.
-    VkDescriptorSetLayout layouts[3] = {
-        shader->object_descriptor_set_layout,
-        shader->object_descriptor_set_layout,
-        shader->object_descriptor_set_layout,        
-    };
+    // Allocate one descriptor set per swapchain image.
+    VkDescriptorSetLayout layouts[VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT];
+    for (u32 i = 0; i < image_count; ++i) {
+        layouts[i] = shader->object_descriptor_set_layout;
+    }
 
     VkDescriptorSetAllocateInfo allocate_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
     allocate_info.descriptorPool = shader->object_descriptor_pool;
-    allocate_info.descriptorSetCount = 3;
+    allocate_info.descriptorSetCount = image_count;
     allocate_info.pSetLayouts = layouts;
     VkResult result = vkAllocateDescriptorSets(context->device.logical_device, &allocate_info, object_state->descriptor_sets);
     if (result != VK_SUCCESS) {
@@ -412,7 +416,7 @@ b8 vulkan_material_shader_acquire_resources(vulkan_context* context, struct vulk
 void vulkan_material_shader_release_resources(vulkan_context* context, struct vulkan_material_shader* shader, u32 object_id) {
     vulkan_object_shader_object_state* object_state = &shader->object_states[object_id];
 
-    const u32 descriptor_set_count = 3;
+    const u32 descriptor_set_count = context->swapchain.image_count;
     // Release object descriptor sets.
     VkResult result = vkFreeDescriptorSets(context->device.logical_device, shader->object_descriptor_pool, descriptor_set_count, object_state->descriptor_sets);
     if (result != VK_SUCCESS) {
@@ -420,7 +424,7 @@ void vulkan_material_shader_release_resources(vulkan_context* context, struct vu
     }
 
     for (u32 i = 0; i < VULKAN_OBJECT_SHADER_DESCRIPTOR_COUNT; ++i) {
-        for (u32 j = 0; j < 3; ++j) {
+        for (u32 j = 0; j < context->swapchain.image_count; ++j) {
             object_state->descriptor_states[i].generations[j] = INVALID_ID;
             object_state->descriptor_states[i].ids[j] = INVALID_ID;
         }
