@@ -77,12 +77,12 @@ b8 vulkan_graphics_pipeline_create(
     color_blend_create_info.pAttachments = &color_blend_attachment_state;
     
     // Dynamic state.
-    const u32 dynamic_state_count = 3;
-    VkDynamicState dynamic_states[dynamic_state_count] = {
+    VkDynamicState dynamic_states[] = {
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
         VK_DYNAMIC_STATE_LINE_WIDTH
     };
+    const u32 dynamic_state_count = sizeof(dynamic_states) / sizeof(dynamic_states[0]);
 
     VkPipelineDynamicStateCreateInfo dynamic_state_create_info = {VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO};
     dynamic_state_create_info.dynamicStateCount = dynamic_state_count;

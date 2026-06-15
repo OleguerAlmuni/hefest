@@ -8,8 +8,13 @@
 #include <sys/stat.h>
 
 b8 filesystem_exists(const char* path) {
+#if HPLATFORM_WINDOWS
     struct _stat buffer;
     return _stat(path, &buffer) == 0;
+#else
+    struct stat buffer;
+    return stat(path, &buffer) == 0;
+#endif
 }
 
 b8 filesystem_open(const char* path, file_modes mode, b8 binary, file_handle* out_handle) {

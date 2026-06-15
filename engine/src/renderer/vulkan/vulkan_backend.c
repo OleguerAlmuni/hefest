@@ -240,7 +240,7 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
 
     // TODO: temporary test code.
     const u32 vert_count = 4;
-    vertex_3d verts[vert_count];
+    vertex_3d verts[4];
     hzero_memory(verts, sizeof(vertex_3d) * vert_count);
 
     const f32 f = 10.0f;
@@ -266,7 +266,7 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
     verts[3].texture_coordinates.y = 0.0f;
 
     const u32 index_count = 6;
-    u32 indices[index_count] = {0, 1, 2, 0, 3, 1};
+    u32 indices[] = {0, 1, 2, 0, 3, 1};
 
     upload_data_range(&context, context.device.graphics_command_pool, 0, context.device.graphics_queue, &context.object_vertex_buffer, 0, sizeof(vertex_3d) * vert_count, verts);
     upload_data_range(&context, context.device.graphics_command_pool, 0, context.device.graphics_queue, &context.object_index_buffer, 0, sizeof(u32) * index_count, indices);

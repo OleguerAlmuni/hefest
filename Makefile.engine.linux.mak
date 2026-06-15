@@ -5,7 +5,7 @@ ASSEMBLY := engine
 EXTENSION := .so
 COMPILER_FLAGS := -g -MD -Werror=vla -fdeclspec -fPIC
 INCLUDE_FLAGS := -Iengine/src -I$(VULKAN_SDK)/include
-LINKER_FLAGS := -g -shared -lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon -L$(VULKAN_SDK)/lib -L/usr/X11R6/lib
+LINKER_FLAGS := -g -shared -lvulkan -lxcb -lX11 -lX11-xcb -lxkbcommon -lm -L$(VULKAN_SDK)/lib -L/usr/X11R6/lib
 DEFINES := -D_DEBUG -DHEXPORT
 
 SRC_FILES := $(shell find $(ASSEMBLY) -name *.c)
@@ -18,6 +18,7 @@ all: scaffold compile link
 scaffold:
 	@echo Scaffolding folder structure...
 	@mkdir -p $(addprefix $(OBJ_DIR)/,$(DIRECTORIES))
+	@mkdir -p $(BUILD_DIR)
 	@echo Done.
 
 .PHONY: link

@@ -6,6 +6,9 @@
 
 #include "containers/darray.h"
 
+// Maximum number of physical devices enumerated during device selection.
+#define VULKAN_MAX_PHYSICAL_DEVICE_COUNT 32
+
 typedef struct vulkan_physical_device_requirements {
     b8 graphics;
     b8 present;
@@ -266,8 +269,7 @@ b8 select_physical_device(vulkan_context* context) {
         return false;
     }
 
-    const u32 max_device_count = 32;
-    VkPhysicalDevice physical_devices[max_device_count];
+    VkPhysicalDevice physical_devices[VULKAN_MAX_PHYSICAL_DEVICE_COUNT];
     VK_CHECK(vkEnumeratePhysicalDevices(context->instance, &physical_device_count, physical_devices));
     for (u32 i = 0; i < physical_device_count; ++i) {
         VkPhysicalDeviceProperties properties;

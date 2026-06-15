@@ -11,6 +11,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "vendor/stb_image.h"
 
+// Spec of the default texture used as a fallback when a texture fails to load.
+#define DEFAULT_TEXTURE_DIMENSION 256
+#define DEFAULT_TEXTURE_CHANNELS  4
+
 typedef struct texture_system_state {
     texture_system_config config;
     texture default_texture;
@@ -209,17 +213,14 @@ b8 create_default_textures(texture_system_state* state) {
     // NOTE: Create a default texture, a 256x256 blue/white checkerboard pattern.
     // This is done in code to eliminate asset dependencies.
     HTRACE("Creating default texture...");
-    const u32 texture_dimension = 256;
-    const u32 channels = 4;
-    const u32 pixel_count = texture_dimension * texture_dimension;
-    u8 pixels[pixel_count * channels];
-    hset_memory(pixels, 255, sizeof(u8) * pixel_count * channels);
+    u8 pixels[DEFAULT_TEXTURE_DIMENSION * DEFAULT_TEXTURE_DIMENSION * DEFAULT_TEXTURE_CHANNELS];
+    hset_memory(pixels, 255, sizeof(pixels));
 
     // Each pixel.
-    for (u64 row = 0; row < texture_dimension; ++row) {
-        for (u64 col = 0; col < texture_dimension; ++col) {
-            u64 index = (row * texture_dimension) + col;
-            u64 index_bpp = index * channels;
+    for (u64 row = 0; row < DEFAULT_TEXTURE_DIMENSION; ++row) {
+        for (u64 col = 0; col < DEFAULT_TEXTURE_DIMENSION; ++col) {
+            u64 index = (row * DEFAULT_TEXTURE_DIMENSION) + col;
+            u64 index_bpp = index * DEFAULT_TEXTURE_CHANNELS;
             if (row % 2) {
                 if (col % 2) {
                     pixels[index_bpp + 0] = 0;
@@ -236,9 +237,9 @@ b8 create_default_textures(texture_system_state* state) {
 
     renderer_create_texture(
         "default",
-        texture_dimension,
-        texture_dimension,
-        4,
+        DEFAULT_TEXTURE_DIMENSION,
+        DEFAULT_TEXTURE_DIMENSION,
+        DEFAULT_TEXTURE_CHANNELS,
         pixels,
         false,
         &state->default_texture

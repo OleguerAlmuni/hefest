@@ -2,6 +2,9 @@
 
 #include "core/hmemory.h"
 
+// Number of attachments (color + depth) in the renderpass. TODO: Make this configurable.
+#define RENDERPASS_ATTACHMENT_COUNT 2
+
 void vulkan_renderpass_create(
     vulkan_context* context,
     vulkan_renderpass* out_renderpass,
@@ -28,8 +31,7 @@ void vulkan_renderpass_create(
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 
     // Attachments TODO: Make this configurable.
-    const u32 attachment_description_count = 2;
-    VkAttachmentDescription attachment_descriptions[attachment_description_count];
+    VkAttachmentDescription attachment_descriptions[RENDERPASS_ATTACHMENT_COUNT];
     
     // Color attachment.
     VkAttachmentDescription color_attachment;
@@ -98,7 +100,7 @@ void vulkan_renderpass_create(
 
     // Render pass create.
     VkRenderPassCreateInfo render_pass_create_info = {VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
-    render_pass_create_info.attachmentCount = attachment_description_count;
+    render_pass_create_info.attachmentCount = RENDERPASS_ATTACHMENT_COUNT;
     render_pass_create_info.pAttachments = attachment_descriptions;
     render_pass_create_info.subpassCount = 1;
     render_pass_create_info.pSubpasses = &subpass;

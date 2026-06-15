@@ -26,11 +26,11 @@ b8 strings_equal(const char* str0, const char* str1) {
 }
 
 b8 strings_equal_insensitive(const char* str0, const char* str1) {
-#if defined(_GNUC_)
+#if defined(__GNUC__)
     return strcasecmp(str0, str1) == 0;
 #elif (defined _MSC_VER)
     return _strcmpi(str0, str1) == 0;
-#endif    
+#endif
 }
 
 i32 string_format(char* dest, const char* format, ...) {
@@ -129,7 +129,7 @@ b8 string_to_vec4(char* str, vec4* out_vector) {
         return false;
     }
 
-    kzero_memory(out_vector, sizeof(vec4));
+    hzero_memory(out_vector, sizeof(vec4));
     i32 result = sscanf(str, "%f %f %f %f", &out_vector->x, &out_vector->y, &out_vector->z, &out_vector->w);
     return result != -1;
 }
@@ -139,7 +139,7 @@ b8 string_to_vec3(char* str, vec3* out_vector) {
         return false;
     }
 
-    kzero_memory(out_vector, sizeof(vec3));
+    hzero_memory(out_vector, sizeof(vec3));
     i32 result = sscanf(str, "%f %f %f", &out_vector->x, &out_vector->y, &out_vector->z);
     return result != -1;
 }
@@ -149,7 +149,7 @@ b8 string_to_vec2(char* str, vec2* out_vector) {
         return false;
     }
 
-    kzero_memory(out_vector, sizeof(vec2));
+    hzero_memory(out_vector, sizeof(vec2));
     i32 result = sscanf(str, "%f %f", &out_vector->x, &out_vector->y);
     return result != -1;
 }
@@ -259,5 +259,5 @@ b8 string_to_bool(char* str, b8* b) {
         return false;
     }
 
-    return strings_equal(str, "1") || strings_equali(str, "true");
+    return strings_equal(str, "1") || strings_equal_insensitive(str, "true");
 }
