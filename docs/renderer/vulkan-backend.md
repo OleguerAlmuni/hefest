@@ -81,6 +81,6 @@ State lives in a single file-static `vulkan_context context;` (`vulkan_backend.c
 Specific subsystems:
 
 - [`vulkan-device.md`](vulkan-device.md), [`vulkan-swapchain.md`](vulkan-swapchain.md), [`vulkan-renderpass.md`](vulkan-renderpass.md)
-- [`vulkan-framebuffer-and-sync.md`](vulkan-framebuffer-and-sync.md), [`vulkan-command-buffers.md`](vulkan-command-buffers.md)
+- [`vulkan-sync.md`](vulkan-sync.md), [`vulkan-command-buffers.md`](vulkan-command-buffers.md)
 - [`vulkan-pipeline.md`](vulkan-pipeline.md), [`vulkan-buffers.md`](vulkan-buffers.md), [`vulkan-images.md`](vulkan-images.md)
 - [`vulkan-shaders.md`](vulkan-shaders.md)
