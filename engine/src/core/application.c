@@ -8,6 +8,7 @@
 #include "core/event.h"
 #include "core/input.h"
 #include "core/clock.h"
+#include "core/metrics.h"
 
 #include "memory/linear_allocator.h"
 
@@ -42,6 +43,9 @@ typedef struct application_state {
 
     u64 logging_system_memory_requirement;
     void* logging_system_state;
+
+    u64 metrics_system_memory_requirement;
+    void* metrics_system_state;
 
     u64 input_system_memory_requirement;
     void* input_system_state;
@@ -142,6 +146,16 @@ b8 application_create(game* game_inst) {
     app_state->logging_system_state = linear_allocator_allocate(&app_state->systems_allocator, app_state->logging_system_memory_requirement);
     if(!initialize_logging(&app_state->logging_system_memory_requirement, &app_state->logging_system_state)) {
         HERROR("Failed to initialize logging system; shutting down.");
+        return false;
+    }
+
+    // Metrics system. Placed right after logging so that its warnings are
+    // visible, and before everything it may end up measuring. It depends only
+    // on the platform clock, which needs no initialization.
+    metrics_initialize(&app_state->metrics_system_memory_requirement, 0);
+    app_state->metrics_system_state = linear_allocator_allocate(&app_state->systems_allocator, app_state->metrics_system_memory_requirement);
+    if (!metrics_initialize(&app_state->metrics_system_memory_requirement, app_state->metrics_system_state)) {
+        HERROR("Failed to initialize metrics system; shutting down.");
         return false;
     }
 
@@ -299,10 +313,17 @@ b8 application_run() {
 
     HINFO(get_memory_usage_str());
 
+    // Seconds of accumulated time since the last metrics report.
+    f64 time_since_report = 0;
+
     while(app_state->is_running) {
+        metrics_frame_begin();
+
+        metrics_section_begin(METRICS_SECTION_PLATFORM);
         if (!platform_pump_messages()) {
             app_state->is_running = false;
         }
+        metrics_section_end(METRICS_SECTION_PLATFORM);
 
         if (!app_state->is_suspended) {
             // Update clock and get delta time.
@@ -311,14 +332,20 @@ b8 application_run() {
             f64 delta = (current_time - app_state->last_time);
             f64 frame_start_time = platform_get_absolute_time();
 
-            if (!app_state->game_inst->update(app_state->game_inst, (f32)delta)) {
+            metrics_section_begin(METRICS_SECTION_GAME_UPDATE);
+            b8 update_result = app_state->game_inst->update(app_state->game_inst, (f32)delta);
+            metrics_section_end(METRICS_SECTION_GAME_UPDATE);
+            if (!update_result) {
                 HFATAL("Game update failed. Shutting down.");
                 app_state->is_running = false;
                 break;
             }
 
             // Call the render routine.
-            if (!app_state->game_inst->render(app_state->game_inst, (f32)delta)) {
+            metrics_section_begin(METRICS_SECTION_GAME_RENDER);
+            b8 render_result = app_state->game_inst->render(app_state->game_inst, (f32)delta);
+            metrics_section_end(METRICS_SECTION_GAME_RENDER);
+            if (!render_result) {
                 HFATAL("Game render failed. Shutting down.");
                 app_state->is_running = false;
                 break;
@@ -342,7 +369,9 @@ b8 application_run() {
             packet.ui_geometry_count = 1;
             packet.ui_geometries = &test_ui_render;
             // TODO: end temp
+            metrics_section_begin(METRICS_SECTION_RENDER);
             renderer_draw_frame(&packet);
+            metrics_section_end(METRICS_SECTION_RENDER);
 
             // Figure out how long the frame took and, if below
             f64 frame_end_time = platform_get_absolute_time();
@@ -370,6 +399,17 @@ b8 application_run() {
 
             // Update last time.
             app_state->last_time = current_time;
+
+            time_since_report += frame_elapsed_time;
+        }
+
+        metrics_frame_end();
+
+        // Report the rolling window once per second. Redirecting stdout to a
+        // file is enough to capture a measurement run.
+        if (time_since_report >= 1.0) {
+            HINFO("%s", metrics_report_str());
+            time_since_report = 0;
         }
     }
 
@@ -384,6 +424,7 @@ b8 application_run() {
     // TODO: end temp
 
     input_system_shutdown(app_state->input_system_state);
+    metrics_shutdown(app_state->metrics_system_state);
 
     geometry_system_shutdown(app_state->geometry_system_state);
 

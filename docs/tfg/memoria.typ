@@ -139,7 +139,8 @@ dels quals té una resposta explícita al capítol de resultats:
 + Implementar una capa d'abstracció de plataforma que permeti executar el motor
   sobre Windows i Linux sense modificacions al codi dels subsistemes superiors.
 + Implementar un renderitzador sobre Vulkan capaç de carregar geometria,
-  textures i materials des de disc i dibuixar-los amb una càmera controlable.
+  textures i materials des de disc, il·luminar-los i dibuixar-los amb una
+  càmera controlable.
 + Dissenyar un model de gestió de memòria explícit, en què la ubicació i el
   cicle de vida de l'estat de cada subsistema siguin decisions del motor i no del
   sistema d'assignació subjacent.
@@ -147,6 +148,8 @@ dels quals té una resposta explícita al capítol de resultats:
   de memòria dedicada, i contrastar-ne el comportament.
 + Documentar cada decisió estructural del motor amb la font primària que la
   fonamenta, de manera que en sigui possible la justificació independent.
++ Dotar el motor d'una capa d'instrumentació pròpia que permeti mesurar-ne el
+  comportament sense recórrer a eines externes.
 + Avaluar empíricament un conjunt de decisions del renderitzador i quantificar
   l'impacte de cadascuna.
 
@@ -322,9 +325,12 @@ preveu @gregory2018. Aquesta mena de
 limitacions es documenten al lloc corresponent de cada subsistema i es recullen
 de manera conjunta a les conclusions.
 
-#todo[PENDENT: revisar la fila «Perfilatge i depuració» i la menció a la
-instrumentació quan el subsistema estigui implementat. Ara mateix només hi ha
-comptadors de memòria per etiqueta.]
+Cal precisar el que la taula recull com a perfilatge i depuració: el motor
+disposa de comptadors d'ocupació de memòria per etiqueta i d'una capa
+d'instrumentació temporal que mesura el cost de cada fase del #f[frame]. No hi
+ha, en canvi, cap eina de depuració visual ni mesura de temps de dispositiu, de
+manera que la cobertura d'aquesta capa és parcial. El capítol 6 en detalla
+l'abast i les limitacions.
 
 == De OpenGL a Vulkan: per què existeix Vulkan
 
@@ -660,6 +666,11 @@ diferenciat, recollides a la @tab:fases.
     [Sistema de fitxers, canonada gràfica completa, uniformes i descriptors,
      constants d'inserció, textures des de disc, sistema de textures, suport per
      a Linux, documentació i adaptació a GPU integrades.],
+    [Ampliació],
+    [set. 2026],
+    [Sistemes de materials, de geometria i de recursos amb carregadors
+     especialitzats; suport per a múltiples passades de renderitzat i passada
+     d'interfície d'usuari; il·luminació direccional; capa d'instrumentació.],
   ),
   caption: [Fases del desenvolupament del motor.],
 ) <tab:fases>
@@ -757,12 +768,18 @@ verificables a l'historial del repositori.
   cada decisió de disseny del motor amb la secció corresponent de les fonts
   normatives, recollit a l'Annex A.
 
-/ Avaluació empírica: El disseny experimental, la instrumentació i les mesures
-  del capítol 6, que no formen part de la sèrie de referència.
+/ Capa d'instrumentació: El subsistema que mesura el cost de cada fase del
+  #f[frame], dissenyat a partir de la descripció de perfilatge integrat i
+  d'estadístiques de memòria d'@gregory2018. Manté una finestra mòbil de mostres
+  per obtenir xifres estables i acumuladors independents del bucle per a les
+  operacions que només succeeixen a l'arrencada. El capítol 5 en descriu el
+  disseny i el capítol 6 el fa servir.
 
-#todo[Actualitzar aquesta llista a mesura que s'implementin l'assignador de
-#f[frame] i la capa d'instrumentació, tots dos derivats directament de
-@gregory2018 i no de la implementació de referència.]
+/ Avaluació empírica: El disseny experimental i les mesures del capítol 6.
+
+#todo[Ampliar aquesta llista si s'implementa l'assignador de #f[frame] amb
+marcadors descrit a @gregory2018, que ara mateix consta com a línia de
+continuació al capítol 7.]
 
 === Delimitació
 
@@ -1380,10 +1397,9 @@ capa genèrica de gestió de recursos que unificaria l'accés a qualsevol tipus
 d'actiu @gregory2018. Es tracta d'una de les línies de continuació
 que es recullen al capítol 7.
 
-#todo[Revisar aquesta secció quan el sistema de materials estigui integrat. La
-descripció del recompte de referències i de les generacions és estable, però la
-part relativa als materials descriu un sistema encara no incorporat al camí
-d'execució.]
+El mateix esquema s'aplica avui a tres tipus de recurs —textures, materials i
+geometries—, cosa que fa que la mancança descrita al paràgraf anterior sigui més
+visible: la repetició no afecta dos subsistemes sinó tres.
 
 // =============================================================================
 = Disseny i implementació
@@ -1425,8 +1441,132 @@ descriptor de GPU.]
 
 == Resta de subsistemes
 
-#todo[Taula resum: subsistema, responsabilitat, fitxers, estat. Remetre a
-l'Annex C per a l'API pública i al repositori per al codi.]
+Les seccions anteriors tracten en profunditat els quatre subsistemes amb més
+càrrega de decisió. Aquesta recull l'inventari complet del motor, per situar-los
+dins del conjunt.
+
+El codi font del motor consta de 84 fitxers i aproximadament 12.700 línies,
+sense comptar-hi la biblioteca de tercers emprada per descodificar imatges. La
+@tab:subsistemes els agrupa segons les capes del model presentat al capítol 2.
+
+#figure(
+  table(
+    columns: (auto, 1fr, auto),
+    inset: 6pt,
+    align: (left, left, left),
+    stroke: 0.4pt + rgb("#ccc"),
+    table.header([*Subsistema*], [*Responsabilitat*], [*Detall*]),
+
+    table.cell(colspan: 3)[_Capa d'independència de plataforma_],
+    [Plataforma],
+    [Finestra, drenatge d'esdeveniments del sistema, rellotge absolut, reserva de
+     memòria i sortida per consola. Implementada per a Windows i per a Linux
+     sobre XCB, X11 i xkbcommon.],
+    [§5.1],
+    [Sistema de fitxers],
+    [Lectura i escriptura de fitxers en mode text i binari.],
+    [Annex C],
+
+    table.cell(colspan: 3)[_Sistemes bàsics_],
+    [Registre i assercions],
+    [Sis nivells de severitat, amb els inferiors eliminats en compilacions de
+     producció.],
+    [Annex C],
+    [Memòria],
+    [Reserva etiquetada per categoria, amb totals acumulats per etiqueta i
+     recompte d'assignacions.],
+    [§5.2],
+    [Assignador lineal],
+    [Repartiment incremental sobre un bloc fix, sense alliberament individual.],
+    [§5.2],
+    [Instrumentació],
+    [Mesura del cost de cada fase del #f[frame] sobre una finestra mòbil, amb
+     acumuladors independents per a operacions fora del bucle.],
+    [§5.2],
+    [Esdeveniments],
+    [Publicació i subscripció per codi d'esdeveniment.],
+    [Annex C],
+    [Entrada],
+    [Estat de teclat i ratolí, amb comparació entre l'estat actual i el previ per
+     detectar transicions.],
+    [Annex C],
+    [Rellotge],
+    [Mesura de temps transcorregut, base del càlcul del pas de temps.],
+    [Annex C],
+    [Cadenes],
+    [Manipulació de cadenes i conversió a tipus numèrics i vectorials.],
+    [Annex C],
+    [Contenidors],
+    [Vector dinàmic amb capçalera de metadades i taula de dispersió.],
+    [Annex C],
+    [Matemàtiques],
+    [Vectors, matrius, quaternions i les projeccions i transformacions que el
+     renderitzador necessita.],
+    [Annex C],
+
+    table.cell(colspan: 3)[_Gestió de recursos_],
+    [Sistema de recursos],
+    [Registre de carregadors especialitzats i resolució de rutes a partir d'una
+     arrel configurable.],
+    [§5.4],
+    [Carregadors],
+    [Quatre implementacions especialitzades: text, binari, imatge i material.],
+    [§5.4],
+    [Textures],
+    [Adquisició per nom amb recompte de referències i textura per defecte
+     generada per codi.],
+    [§5.4],
+    [Materials],
+    [Adquisició per nom a partir de fitxers de configuració, amb color difús i
+     mapa de textura.],
+    [§5.4],
+    [Geometria],
+    [Registre de geometries i generadors de plans i de cubs amb normals.],
+    [§5.4],
+
+    table.cell(colspan: 3)[_Renderitzador_],
+    [Part independent de l'API],
+    [Estat de projecció, vista i il·luminació, i despatx cap a la implementació
+     activa mitjançant una taula de punters a funció.],
+    [§5.1],
+    [Implementació de Vulkan],
+    [Instància, dispositiu, cadena d'intercanvi, passades de renderitzat,
+     #f[command buffers], canonades, búfers, imatges i sincronització.],
+    [§5.3],
+    [#f[Shaders] integrats],
+    [Dos programes: el de materials, amb il·luminació direccional, i el
+     d'interfície d'usuari.],
+    [§5.3],
+  ),
+  caption: [Inventari de subsistemes del motor.],
+) <tab:subsistemes>
+
+=== Evolució de l'estructura
+
+L'inventari actual no coincideix amb el que hauria resultat d'anar afegint
+subsistemes sense revisar-ne cap. Dos casos il·lustren com ha canviat
+l'estructura durant el desenvolupament.
+
+El primer és la incorporació del suport per a múltiples passades de renderitzat.
+Fins aleshores el motor tenia una única passada i mòduls independents per als
+#f[framebuffers] i per a les tanques de sincronització. En generalitzar el
+tractament de passades, tots dos van deixar de tenir entitat pròpia i van passar
+a formar part de l'abstracció de passada, de manera que els fitxers
+corresponents es van eliminar. El nombre de mòduls va disminuir mentre la
+funcionalitat augmentava.
+
+El segon és l'aparició del sistema de recursos. Els sistemes de textures i de
+materials havien nascut accedint directament al sistema de fitxers i component
+les rutes amb literals dins del codi. La introducció d'una capa de càrrega amb
+carregadors especialitzats va permetre retirar aquest accés directe i centralitzar
+la resolució de rutes. Es tracta, precisament, del tipus de capa genèrica que la
+secció sobre el model de recursos del capítol 4 assenyalava com a mancança, tot i
+que la unificació encara no és completa.
+
+#todo[Aquesta última afirmació cal contrastar-la amb l'estat final del codi: el
+sistema de recursos resol la càrrega, però els sistemes de textures, materials i
+geometria continuen mantenint cadascun la seva pròpia taula de referències. Cal
+decidir si això es presenta com a unificació parcial o com a mancança pendent.]
 
 // =============================================================================
 = Resultats i discussió

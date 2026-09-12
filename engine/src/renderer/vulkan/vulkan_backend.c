@@ -11,6 +11,7 @@
 #include "vulkan_image.h"
 
 #include "core/logger.h"
+#include "core/metrics.h"
 #include "core/hstring.h"
 #include "core/hmemory.h"
 #include "core/application.h"
@@ -46,6 +47,8 @@ void regenerate_framebuffers();
 b8 recreate_swapchain(renderer_backend* backend);
 
 void upload_data_range(vulkan_context* context, VkCommandPool pool, VkFence fence, VkQueue queue, vulkan_buffer* buffer, u64 offset, u64 size, const void* data) {
+    metrics_section_begin(METRICS_SECTION_UPLOAD);
+
     // Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
     VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
     vulkan_buffer staging;
@@ -59,6 +62,8 @@ void upload_data_range(vulkan_context* context, VkCommandPool pool, VkFence fenc
 
     // Clean up the staging buffer.
     vulkan_buffer_destroy(context, &staging); 
+
+    metrics_section_end(METRICS_SECTION_UPLOAD);
 }
 
 void free_data_range(vulkan_buffer* buffer, u64 offset, u64 size) {
@@ -856,6 +861,8 @@ void vulkan_renderer_create_texture(const u8* pixels, texture* texture) {
     // NOTE: Assumes 8 bit per channel.
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
 
+    metrics_section_begin(METRICS_SECTION_UPLOAD);
+
     // Create a staging buffer and load data into it.
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
     VkMemoryPropertyFlags memory_property_flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -912,6 +919,8 @@ void vulkan_renderer_create_texture(const u8* pixels, texture* texture) {
 
     // Destroy the staging buffer only after the command buffer has finished executing.
     vulkan_buffer_destroy(&context, &staging);
+
+    metrics_section_end(METRICS_SECTION_UPLOAD);
 
     // Create a sampler for the texture.
     VkSamplerCreateInfo sampler_info = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};
