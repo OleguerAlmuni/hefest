@@ -8,7 +8,7 @@ Reference-counted, name-keyed texture cache. Loads PNGs from `assets/textures/<n
 
 - `engine/src/resources/resource_types.h` — `texture` struct (id, w/h, channels, generation, `internal_data`).
 - `engine/src/systems/texture_system.h` / `texture_system.c`.
-- `engine/src/vendor/stb_image.h` — vendored PNG/JPG decoder (used with `STB_IMAGE_IMPLEMENTATION` in `texture_system.c:11`).
+- `engine/src/vendor/stb_image.h` — vendored PNG/JPG decoder. Since the resource system landed it is used from `engine/src/resources/loaders/image_loader.c`, not the texture system.
 
 ## Public API
 

@@ -38,6 +38,15 @@ HAPI b8 filesystem_open(const char* path, file_modes mode, b8 binary, file_handl
  */
 HAPI void filesystem_close(file_handle* handle);
 
+/**
+ * @brief Attempts to read the size of the file to which handle is attached.
+ *
+ * @param handle The file handle.
+ * @param out_size A pointer to hold the file size.
+ * @returns True if successful; otherwise false.
+ */
+HAPI b8 filesystem_size(file_handle* handle, u64* out_size);
+
 /** 
  * Reads up to a newline or EOF. Allocates *line_buf, which must be freed by the caller.
  * @param handle A pointer to a file_handle structure.
@@ -75,7 +84,16 @@ HAPI b8 filesystem_read(file_handle* handle, u64 data_size, void* out_data, u64*
  * @param out_bytes_read A pointer to a number which will be populated with the number of bytes actually read from the file.
  * @returns True if successful; otherwise false.
  */
-HAPI b8 filesystem_read_all_bytes(file_handle* handle, u8** out_bytes, u64* out_bytes_read);
+HAPI b8 filesystem_read_all_bytes(file_handle* handle, u8* out_bytes, u64* out_bytes_read);
+
+/**
+ * Reads all characters of data into out_text.
+ * @param handle A pointer to a file_handle structure.
+ * @param out_text A character array which will be populated by this method.
+ * @param out_bytes_read A pointer to a number which will be populated with the number of bytes actually read from the file.
+ * @returns True if successful; otherwise false.
+ */
+HAPI b8 filesystem_read_all_text(file_handle* handle, char* out_text, u64* out_bytes_read);
 
 /** 
  * Writes provided data to the file.
