@@ -26,6 +26,15 @@ typedef struct renderer_system_state {
     mat4 ui_view;
     f32 near_clip;
     f32 far_clip;
+
+    // Scene lighting. This is API-agnostic data and therefore belongs on this
+    // side of the renderer split.
+    // TODO: This should travel in the render packet once the engine has a scene
+    // representation, rather than living as renderer state.
+    vec3 view_position;
+    vec4 ambient_color;
+    vec4 light_direction;
+    vec4 light_color;
 } renderer_system_state;
 
 static renderer_system_state* state_ptr;
@@ -51,6 +60,13 @@ b8 renderer_system_initialize(u64* memory_requirement, void* state, const char* 
     state_ptr->projection = mat4_perspective(deg_to_rad(45.0f), 1280/720.0f, state_ptr->near_clip, state_ptr->far_clip);
     state_ptr->view = mat4_translation((vec3){0, 0, -30.0f});
     state_ptr->view = mat4_inverse(state_ptr->view);
+
+    // Default scene lighting: a single directional light pointing down and away
+    // from the camera, plus a low ambient term so unlit faces are not black.
+    state_ptr->view_position = (vec3){0.0f, 0.0f, 30.0f};
+    state_ptr->ambient_color = (vec4){0.25f, 0.25f, 0.25f, 1.0f};
+    state_ptr->light_direction = (vec4){-0.57735f, -0.57735f, -0.57735f, 0.0f};
+    state_ptr->light_color = (vec4){1.0f, 1.0f, 1.0f, 1.0f};
 
     // UI projection/view
     state_ptr->ui_projection = mat4_orthographic(0, 1280.0f, 720.0f, 0, -100.0f, 100.0f); // Intentionally flipped on the y axis.
@@ -101,7 +117,14 @@ b8 renderer_draw_frame(render_packet* packet) {
             return false;
         }
 
-        state_ptr->backend.update_global_world_state(state_ptr->projection, state_ptr->view, vec3_zero(), vec4_one(), 0);
+        state_ptr->backend.update_global_world_state(
+            state_ptr->projection,
+            state_ptr->view,
+            state_ptr->view_position,
+            state_ptr->ambient_color,
+            state_ptr->light_direction,
+            state_ptr->light_color,
+            0);
 
         // Draw geometries.
         u32 count = packet->geometry_count;
@@ -148,8 +171,9 @@ b8 renderer_draw_frame(render_packet* packet) {
     return true;
 }
 
-void renderer_set_view(mat4 view) {
+void renderer_set_view(mat4 view, vec3 view_position) {
     state_ptr->view = view;
+    state_ptr->view_position = view_position;
 }
 
 void renderer_create_texture(const u8* pixels, struct texture* texture) {

@@ -30,7 +30,7 @@ typedef struct renderer_backend {
     void (*resized)(struct renderer_backend* backend, u16 width, u16 height);
 
     b8 (*begin_frame)(struct renderer_backend* backend, f32 delta_time);
-    void (*update_global_world_state)(mat4 projection, mat4 view, vec3 view_position, vec4 ambient_color, i32 mode);
+    void (*update_global_world_state)(mat4 projection, mat4 view, vec3 view_position, vec4 ambient_color, vec4 light_direction, vec4 light_color, i32 mode);
     void (*update_global_ui_state)(mat4 projection, mat4 view, i32 mode);
     b8 (*end_frame)(struct renderer_backend* backend, f32 delta_time);
 

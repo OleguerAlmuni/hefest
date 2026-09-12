@@ -131,7 +131,7 @@ b8 game_update(game* game_inst, f32 delta_time) {
     recalculate_view_matrix(state);
 
     // HACK: This should not be available outside the engine.
-    renderer_set_view(state->view);
+    renderer_set_view(state->view, state->camera_position);
 
     return true;
 }

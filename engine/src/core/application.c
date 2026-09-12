@@ -225,8 +225,10 @@ b8 application_create(game* game_inst) {
 
     // TODO: temp
 
-    // Load up a plane configuration, and load geometry from it.
-    geometry_config g_config = geometry_system_generate_plane_config(10.0f, 5.0f, 5, 5, 5.0f, 2.0f, "test_geometry", "test_material");
+    // Load up a cube configuration, and load geometry from it. A cube is used
+    // rather than a plane so that the six differing face normals make the
+    // lighting visible.
+    geometry_config g_config = geometry_system_generate_cube_config(10.0f, 10.0f, 10.0f, 1.0f, 1.0f, "test_geometry", "test_material");
     app_state->test_geometry = geometry_system_acquire_from_config(g_config, true);
 
     // Clean up the allocations for the geometry config.

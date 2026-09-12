@@ -32,7 +32,8 @@ b8 vulkan_material_shader_create(vulkan_context* context, vulkan_material_shader
     global_ubo_layout_binding.descriptorCount = 1;
     global_ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     global_ubo_layout_binding.pImmutableSamplers = 0;
-    global_ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+    // The fragment stage also reads this block, for the lighting terms.
+    global_ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
     VkDescriptorSetLayoutCreateInfo global_layout_info = {VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
     global_layout_info.bindingCount = 1;
@@ -112,18 +113,20 @@ b8 vulkan_material_shader_create(vulkan_context* context, vulkan_material_shader
 
     // Attributes
     u32 offset = 0;
-#define ATTRIBUTE_COUNT 2
+#define ATTRIBUTE_COUNT 3
     VkVertexInputAttributeDescription attribute_descriptions[ATTRIBUTE_COUNT];
 
-    // Position
+    // Position, texture coordinates, normal. The order must match vertex_3d.
     VkFormat formats[ATTRIBUTE_COUNT] = {
         VK_FORMAT_R32G32B32_SFLOAT,
-        VK_FORMAT_R32G32_SFLOAT
+        VK_FORMAT_R32G32_SFLOAT,
+        VK_FORMAT_R32G32B32_SFLOAT
     };
 
     u64 sizes[ATTRIBUTE_COUNT] = {
         sizeof(vec3),
-        sizeof(vec2)
+        sizeof(vec2),
+        sizeof(vec3)
     };
 
     for (u32 i = 0; i < ATTRIBUTE_COUNT; ++i) {

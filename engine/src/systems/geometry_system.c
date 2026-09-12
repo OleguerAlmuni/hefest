@@ -3,6 +3,7 @@
 #include "core/logger.h"
 #include "core/hmemory.h"
 #include "core/hstring.h"
+#include "math/hfst_math.h"
 #include "systems/material_system.h"
 #include "renderer/renderer_frontend.h"
 
@@ -214,6 +215,11 @@ b8 create_default_geometries(geometry_system_state* state) {
     verts[3].texture_coordinates.x = 1.0f;
     verts[3].texture_coordinates.y = 0.0f;
 
+    // The quad lies in the XY plane, so its normal points along +Z.
+    for (u32 i = 0; i < 4; ++i) {
+        verts[i].normal = (vec3){0.0f, 0.0f, 1.0f};
+    }
+
     u32 indices[6] = {0, 1, 2, 0, 3, 1};
 
     // Send the geometry off to the renderer to be uploaded to the GPU.
@@ -341,6 +347,9 @@ geometry_config geometry_system_generate_plane_config(f32 width, f32 height, u32
             v3->texture_coordinates.x = max_uvx;
             v3->texture_coordinates.y = min_uvy;
 
+            // A plane generated in the XY plane faces along +Z.
+            v0->normal = v1->normal = v2->normal = v3->normal = (vec3){0.0f, 0.0f, 1.0f};
+
             // Generate indices.
             u32 i_offset = ((y * x_segment_count) + x) * 6;
             ((u32*)config.indices)[i_offset + 0] = v_offset + 0;
@@ -350,6 +359,133 @@ geometry_config geometry_system_generate_plane_config(f32 width, f32 height, u32
             ((u32*)config.indices)[i_offset + 4] = v_offset + 3;
             ((u32*)config.indices)[i_offset + 5] = v_offset + 1;
         }
+    }
+
+    if (name && string_length(name) > 0) {
+        string_ncopy(config.name, name, GEOMETRY_NAME_MAX_LENGTH);
+    } else {
+        string_ncopy(config.name, DEFAULT_GEOMETRY_NAME, GEOMETRY_NAME_MAX_LENGTH);
+    }
+
+    if (material_name && string_length(material_name) > 0) {
+        string_ncopy(config.material_name, material_name, MATERIAL_MAX_NAME_LENGTH);
+    } else {
+        string_ncopy(config.material_name, DEFAULT_MATERIAL_NAME, MATERIAL_MAX_NAME_LENGTH);
+    }
+
+    return config;
+}
+
+geometry_config geometry_system_generate_cube_config(f32 width, f32 height, f32 depth, f32 tile_x, f32 tile_y, const char* name, const char* material_name) {
+    if (width == 0) {
+        HWARN("Width must be nonzero. Defaulting to one.");
+        width = 1.0f;
+    }
+    if (height == 0) {
+        HWARN("Height must be nonzero. Defaulting to one.");
+        height = 1.0f;
+    }
+    if (depth == 0) {
+        HWARN("Depth must be nonzero. Defaulting to one.");
+        depth = 1.0f;
+    }
+    if (tile_x == 0) {
+        HWARN("tile_x must be nonzero. Defaulting to one.");
+        tile_x = 1.0f;
+    }
+    if (tile_y == 0) {
+        HWARN("tile_y must be nonzero. Defaulting to one.");
+        tile_y = 1.0f;
+    }
+
+    geometry_config config;
+    config.vertex_size = sizeof(vertex_3d);
+    config.vertex_count = 4 * 6; // 4 vertices per face, 6 faces. Faces are not
+                                 // shared so that each one can carry its own normal.
+    config.vertices = hallocate(sizeof(vertex_3d) * config.vertex_count, MEMORY_TAG_ARRAY);
+    config.index_size = sizeof(u32);
+    config.index_count = 6 * 6; // 6 indices per face.
+    config.indices = hallocate(sizeof(u32) * config.index_count, MEMORY_TAG_ARRAY);
+
+    const f32 half_width = width * 0.5f;
+    const f32 half_height = height * 0.5f;
+    const f32 half_depth = depth * 0.5f;
+
+    // Every face is laid out with the same vertex ordering the plane generator
+    // uses, but expressed in a face-local frame (u, v, n) chosen so that
+    // u x v = n. Reusing that ordering keeps the winding consistent with the
+    // rest of the engine's geometry, which is built for counter-clockwise front
+    // faces.
+    const vec3 face_normals[6] = {
+        { .x =  0.0f, .y =  0.0f, .z =  1.0f }, // front
+        { .x =  0.0f, .y =  0.0f, .z = -1.0f }, // back
+        { .x =  1.0f, .y =  0.0f, .z =  0.0f }, // right
+        { .x = -1.0f, .y =  0.0f, .z =  0.0f }, // left
+        { .x =  0.0f, .y =  1.0f, .z =  0.0f }, // top
+        { .x =  0.0f, .y = -1.0f, .z =  0.0f }  // bottom
+    };
+    const vec3 face_u[6] = {
+        { .x =  1.0f, .y = 0.0f, .z =  0.0f },
+        { .x = -1.0f, .y = 0.0f, .z =  0.0f },
+        { .x =  0.0f, .y = 0.0f, .z = -1.0f },
+        { .x =  0.0f, .y = 0.0f, .z =  1.0f },
+        { .x =  1.0f, .y = 0.0f, .z =  0.0f },
+        { .x =  1.0f, .y = 0.0f, .z =  0.0f }
+    };
+    const vec3 face_v[6] = {
+        { .x = 0.0f, .y = 1.0f, .z =  0.0f },
+        { .x = 0.0f, .y = 1.0f, .z =  0.0f },
+        { .x = 0.0f, .y = 1.0f, .z =  0.0f },
+        { .x = 0.0f, .y = 1.0f, .z =  0.0f },
+        { .x = 0.0f, .y = 0.0f, .z = -1.0f },
+        { .x = 0.0f, .y = 0.0f, .z =  1.0f }
+    };
+
+    vertex_3d* verts = (vertex_3d*)config.vertices;
+    u32* indices = (u32*)config.indices;
+
+    for (u32 f = 0; f < 6; ++f) {
+        vec3 n = face_normals[f];
+        vec3 u = face_u[f];
+        vec3 v = face_v[f];
+
+        // The axes are unit vectors aligned to a single axis, so the half extent
+        // along each one is simply the cube half extent on that axis.
+        f32 hu = (hfstabs(u.x) * half_width) + (hfstabs(u.y) * half_height) + (hfstabs(u.z) * half_depth);
+        f32 hv = (hfstabs(v.x) * half_width) + (hfstabs(v.y) * half_height) + (hfstabs(v.z) * half_depth);
+        f32 hn = (hfstabs(n.x) * half_width) + (hfstabs(n.y) * half_height) + (hfstabs(n.z) * half_depth);
+
+        vec3 center = vec3_mul_scalar(n, hn);
+        vec3 du = vec3_mul_scalar(u, hu);
+        vec3 dv = vec3_mul_scalar(v, hv);
+
+        u32 v_offset = f * 4;
+        vertex_3d* v0 = &verts[v_offset + 0];
+        vertex_3d* v1 = &verts[v_offset + 1];
+        vertex_3d* v2 = &verts[v_offset + 2];
+        vertex_3d* v3 = &verts[v_offset + 3];
+
+        v0->position = vec3_sub(vec3_sub(center, du), dv);
+        v0->texture_coordinates = (vec2){0.0f, 0.0f};
+
+        v1->position = vec3_add(vec3_add(center, du), dv);
+        v1->texture_coordinates = (vec2){tile_x, tile_y};
+
+        v2->position = vec3_add(vec3_sub(center, du), dv);
+        v2->texture_coordinates = (vec2){0.0f, tile_y};
+
+        v3->position = vec3_sub(vec3_add(center, du), dv);
+        v3->texture_coordinates = (vec2){tile_x, 0.0f};
+
+        v0->normal = v1->normal = v2->normal = v3->normal = n;
+
+        u32 i_offset = f * 6;
+        indices[i_offset + 0] = v_offset + 0;
+        indices[i_offset + 1] = v_offset + 1;
+        indices[i_offset + 2] = v_offset + 2;
+        indices[i_offset + 3] = v_offset + 0;
+        indices[i_offset + 4] = v_offset + 3;
+        indices[i_offset + 5] = v_offset + 1;
     }
 
     if (name && string_length(name) > 0) {

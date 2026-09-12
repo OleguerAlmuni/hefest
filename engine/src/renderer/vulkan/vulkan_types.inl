@@ -174,10 +174,16 @@ typedef struct vulkan_geometry_data {
 } vulkan_geometry_data;
 
 typedef struct vulkan_material_shader_global_ubo {
-    mat4 projection;    // 64 bytes
-    mat4 view;          // 64 bytes
-    mat4 m_reserved0;   // 64 bytes, reserved for future use
-    mat4 m_reserved1;   // 64 bytes, reserved for future use
+    mat4 projection;        // 64 bytes
+    mat4 view;              // 64 bytes
+    // The four vectors below occupy the 64 bytes previously reserved, so the
+    // total size of the block is unchanged. std140 aligns vec4 to 16 bytes,
+    // which this layout already satisfies.
+    vec4 ambient_color;     // 16 bytes
+    vec4 light_direction;   // 16 bytes, xyz used; direction the light travels
+    vec4 light_color;       // 16 bytes
+    vec4 view_position;     // 16 bytes, xyz used
+    mat4 m_reserved1;       // 64 bytes, reserved for future use
 } vulkan_material_shader_global_ubo;
 
 typedef struct vulkan_material_shader_instance_ubo {

@@ -1,0 +1,281 @@
+% =============================================================================
+%  Bibliografia base — Memòria TFG Hefest
+%
+%  AVÍS: verifiqueu cada entrada abans d'entregar. Els anys, editorials i ISBN
+%  són els que consten habitualment, però el rúbric puntua la COMPLETESA i la
+%  CORRECCIÓ del format (0,5 punts), així que val la pena comprovar-ho un per un
+%  contra la font real. Afegiu `urldate` a tot el que sigui en línia.
+% =============================================================================
+
+% ---------- Fonts primàries ---------------------------------------------------
+
+@book{gregory2018,
+  author    = {Gregory, Jason},
+  title     = {Game Engine Architecture},
+  edition   = {3},
+  publisher = {CRC Press},
+  year      = {2018},
+  isbn      = {978-1-138-03545-4}
+}
+
+@manual{vulkanspec,
+  author       = {{Khronos Vulkan Working Group}},
+  title        = {Vulkan 1.4.361 --- A Specification (with all registered extensions)},
+  organization = {The Khronos Group},
+  year         = {2026},
+  url          = {https://registry.khronos.org/vulkan/specs/latest/html/vkspec.html},
+  urldate      = {2026-09-02}
+}
+
+% ---------- Projecte de referència -------------------------------------------
+% Citar-lo és obligatori pel criteri «todas las fuentes citadas» (0,5 punts).
+
+@misc{vroman_kohi,
+  author       = {Vroman, Travis},
+  title        = {Kohi Game Engine / Shadows of Illumina (Vulkan Game Engine
+                  and Game Written in C)},
+  howpublished = {Llista de reproducció de {YouTube}},
+  year         = {2021--},
+  url          = {https://www.youtube.com/playlist?list=PLv8Ddw9K0JPg1BEO-RS-0MYs423cvLVtj},
+  urldate      = {2026-09-09}
+}
+
+@misc{vroman_kohi_repo,
+  author       = {Vroman, Travis},
+  title        = {kohi --- {A} game engine made as part of the Kohi Game Engine
+                  series, written in {C} and {Vulkan}},
+  howpublished = {Repositori de codi font},
+  url          = {https://github.com/travisvroman/kohi},
+  urldate      = {2026-09-09}
+}
+
+% ---------- Arquitectura i disseny de motors ---------------------------------
+
+@book{nystrom2014,
+  author    = {Nystrom, Robert},
+  title     = {Game Programming Patterns},
+  publisher = {Genever Benning},
+  year      = {2014},
+  isbn      = {978-0-9905829-0-8},
+  url       = {https://gameprogrammingpatterns.com/}
+}
+
+@book{fabian_dod,
+  author = {Fabian, Richard},
+  title  = {Data-Oriented Design},
+  year   = {2018},
+  note   = {VERIFICAR edició i URL}
+}
+
+@misc{acton2014,
+  author       = {Acton, Mike},
+  title        = {Data-Oriented Design and {C++}},
+  howpublished = {CppCon},
+  year         = {2014}
+}
+
+@misc{weissflog_handles,
+  author       = {Weissflog, Andre},
+  title        = {Handles are the better pointers},
+  howpublished = {En línia},
+  year         = {2018},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@misc{reinalter_rendering,
+  author       = {Reinalter, Stefan},
+  title        = {Stateless, layered, multi-threaded rendering},
+  howpublished = {Molecular Musings},
+  year         = {2014},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+% ---------- Vulkan: pràctica -------------------------------------------------
+
+@incollection{kapoulkine2019,
+  author    = {Kapoulkine, Arseny},
+  title     = {Writing an efficient {Vulkan} renderer},
+  booktitle = {GPU Zen 2: Advanced Rendering Techniques},
+  editor    = {Engel, Wolfgang},
+  publisher = {Black Cat Publishing},
+  year      = {2019},
+  note      = {Disponible també a zeux.io}
+}
+
+@misc{arntzen_sync,
+  author       = {Arntzen, Hans-Kristian},
+  title        = {Yet another blog explaining {Vulkan} synchronization},
+  howpublished = {En línia},
+  year         = {2019},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@misc{khronos_guide,
+  author       = {{Khronos Group}},
+  title        = {Vulkan Guide},
+  howpublished = {Repositori en línia},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@misc{sawicki_vma,
+  author       = {Sawicki, Adam},
+  title        = {Vulkan Memory Allocator --- Documentation},
+  organization = {AMD GPUOpen},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+% ---------- Memòria i rendiment ----------------------------------------------
+
+@misc{gingerbill_alloc,
+  author       = {Hall, Bill},
+  title        = {Memory Allocation Strategies},
+  howpublished = {En línia},
+  year         = {2019},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@misc{drepper2007,
+  author = {Drepper, Ulrich},
+  title  = {What Every Programmer Should Know About Memory},
+  year   = {2007},
+  note   = {Red Hat, Inc. VERIFICAR URL}
+}
+
+% ---------- Bucle de joc i concurrència --------------------------------------
+
+@misc{fiedler_timestep,
+  author       = {Fiedler, Glenn},
+  title        = {Fix Your Timestep!},
+  howpublished = {Gaffer On Games},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@misc{gyrling2015,
+  author       = {Gyrling, Christian},
+  title        = {Parallelizing the {Naughty Dog} Engine Using Fibers},
+  howpublished = {Game Developers Conference},
+  year         = {2015}
+}
+
+% ---------- Matemàtiques i renderitzat ---------------------------------------
+
+@book{akenine2018,
+  author    = {Akenine-M{\"o}ller, Tomas and Haines, Eric and Hoffman, Naty
+               and Pesce, Angelo and Iwanicki, Micha{\l} and Hillaire, S{\'e}bastien},
+  title     = {Real-Time Rendering},
+  edition   = {4},
+  publisher = {CRC Press},
+  year      = {2018},
+  isbn      = {978-1-138-62700-0}
+}
+
+@book{lengyel_fged1,
+  author    = {Lengyel, Eric},
+  title     = {Foundations of Game Engine Development, Volume 1: Mathematics},
+  publisher = {Terathon Software LLC},
+  year      = {2016},
+  isbn      = {978-0-9858117-4-7}
+}
+
+% ---------- Llenguatge C ------------------------------------------------------
+
+@book{gustedt2019,
+  author    = {Gustedt, Jens},
+  title     = {Modern C},
+  edition   = {2},
+  publisher = {Manning Publications},
+  year      = {2019}
+}
+
+% ---------- Fonts primàries per a §2.2 ---------------------------------------
+
+@misc{everitt2014,
+  author       = {Everitt, Cass},
+  title        = {{OpenGL} Efficiency: {AZDO}},
+  howpublished = {Game Developers Conference, San Francisco},
+  organization = {NVIDIA / The Khronos Group},
+  month        = {mar},
+  year         = {2014},
+  url          = {https://www.khronos.org/assets/uploads/developers/library/2014-gdc/Khronos-OpenGL-Efficiency-GDC-Mar14.pdf},
+  urldate      = {2026-09-08}
+}
+
+@manual{riguer2015,
+  author       = {Riguer, Guennadi},
+  title        = {Mantle Programming Guide and {API} Reference},
+  organization = {Advanced Micro Devices, Inc.},
+  edition      = {Revision 1.0},
+  month        = {mar},
+  year         = {2015}
+}
+
+@misc{olson2016,
+  author       = {Olson, Tom},
+  title        = {Vulkan 101},
+  organization = {The Khronos Group},
+  year         = {2016},
+  note         = {VERIFICAR: esdeveniment i URL exactes. El fitxer
+                  (1-Vulkan_101.pdf, pàgines numerades a partir de la 8)
+                  sembla la primera sessió d'una jornada Vulkan DevU de
+                  Khronos de 2016. L'autor hi consta com a Director de
+                  Graphics Research a ARM i president del Vulkan Working Group}
+}
+
+% ---------- Projectes i documentació de referència per a §2.3 i §2.4 ---------
+
+@misc{muratori_handmade,
+  author       = {Muratori, Casey},
+  title        = {Handmade Hero},
+  howpublished = {Sèrie de vídeos i codi font},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@misc{bgfx,
+  author       = {Karadži{\'c}, Branimir},
+  title        = {bgfx --- Cross-platform rendering library},
+  howpublished = {Repositori de codi font},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@misc{willems_examples,
+  author       = {Willems, Sascha},
+  title        = {Vulkan {C++} examples and demos},
+  howpublished = {Repositori de codi font},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@manual{unity_docs,
+  author       = {{Unity Technologies}},
+  title        = {Unity Documentation},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@manual{unreal_docs,
+  author       = {{Epic Games}},
+  title        = {Unreal Engine Documentation},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@manual{godot_docs,
+  author       = {{Godot Engine contributors}},
+  title        = {Godot Engine Documentation},
+  note         = {VERIFICAR URL i data de consulta}
+}
+
+@book{stroustrup2013,
+  author    = {Stroustrup, Bjarne},
+  title     = {The {C++} Programming Language},
+  edition   = {4},
+  publisher = {Addison-Wesley},
+  year      = {2013},
+  isbn      = {978-0-321-56384-2}
+}
+
+@misc{moltenvk,
+  author       = {{The Khronos Group}},
+  title        = {{MoltenVK} --- {A} {Vulkan} Portability implementation over
+                  Apple's {Metal} graphics framework},
+  howpublished = {Repositori de codi font},
+  url          = {https://github.com/KhronosGroup/MoltenVK},
+  urldate      = {2026-09-10}
+}

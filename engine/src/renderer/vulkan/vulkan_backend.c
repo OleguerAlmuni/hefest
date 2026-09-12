@@ -482,16 +482,18 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend* backend, f32 delta_time
 }
 
 // This takes copies instead of pointers to make it immutable once its called. This prevents having to wait on it if we keep updating the parameters. (#029 43:00)
-void vulkan_renderer_update_global_world_state(mat4 projection, mat4 view, vec3 view_position, vec4 ambient_color, i32 mode) {
+void vulkan_renderer_update_global_world_state(mat4 projection, mat4 view, vec3 view_position, vec4 ambient_color, vec4 light_direction, vec4 light_color, i32 mode) {
     vulkan_command_buffer* command_buffer = &context.graphics_command_buffers[context.image_index];
 
     vulkan_material_shader_use(&context, &context.material_shader);
 
     context.material_shader.global_ubo.projection = projection;
     context.material_shader.global_ubo.view = view;
+    context.material_shader.global_ubo.ambient_color = ambient_color;
+    context.material_shader.global_ubo.light_direction = light_direction;
+    context.material_shader.global_ubo.light_color = light_color;
+    context.material_shader.global_ubo.view_position = (vec4){view_position.x, view_position.y, view_position.z, 1.0f};
 
-    // TODO: other ubo properties
-    
     vulkan_material_shader_update_global_state(&context, &context.material_shader, context.frame_delta_time);
 }
 
