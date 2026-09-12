@@ -1,7 +1,5 @@
 CompileFlags:
-  Add:
-    - -Iengine/src
-    - -D_DEBUG
-    - -DHPLATFORM_LINUX
-    - -DHEXPORT
+  # Per-file include paths and defines come from compile_commands.json (generated
+  # by bear). Keep only the compiler hint here so the database stays authoritative
+  # and per-assembly defines (HEXPORT vs HIMPORT) aren't overridden.
   Compiler: clang

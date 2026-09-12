@@ -33,6 +33,8 @@ HAPI char* string_ncopy(char* dest, const char* source, i64 length);
 
 HAPI char* string_trim(char* str);
 
+HAPI void string_mid(char* dest, const char* source, i32 start, i32 length);
+
 HAPI void string_substring(char* dest, const char* source, i32 start, i32 length);
 
 /**

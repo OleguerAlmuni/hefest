@@ -58,6 +58,9 @@ Chronological story of the engine, with commit hashes for `git show <hash>` refe
 - `7d2d12b` — **Linux support.** `platform_linux.c` (XCB + X11 + xkbcommon), `Makefile.*.linux.mak`, `build-all.sh`, `post-build.sh`. Vulkan surface creation switches on platform.
 - `15fbee3` — **Texture system + hashtable.** `texture_system.c` adds reference-counted lookup by name; `hashtable.c/h` introduced as the lookup container. `auto_release` controls whether refcount → 0 frees the GPU resource.
 
-## Currently uncommitted
+- `317f497` — **VLA removal and Linux fixes.** Every variable-length array replaced with a fixed bound or a heap allocation; `-Werror=vla` added to the engine makefile so they cannot come back.
+- `a0f9a24` — **Non-discrete GPU support.** Physical-device selection falls back to an integrated GPU when no discrete one is present; every per-swapchain-image array sized from `swapchain.image_count` (bounded by `VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT`) instead of a hardcoded 3; per-image render-finished semaphores; sampler anisotropy clamped to the device limit.
 
-`engine/src/core/hstring.{h,c}` has working-tree edits adding a swath of `string_to_*` parsers and vector parsers. Several call into `kzero_memory` and `strings_equali`, which don't exist — see [core/string-library.md](core/string-library.md) "Known limitations".
+## 8. Materials
+
+- **Material system.** `material_system.c/h` adds reference-counted, name-keyed materials loaded from `.hmt` files in `assets/materials/`. A material bundles a diffuse colour with its texture maps, so the renderer binds one material per draw instead of loose textures. `geometry_render_data` now carries a `material*` rather than an object id and a texture array; `object_uniform_object` becomes `material_uniform_object`; the Vulkan material shader keys its instance descriptor sets off `material->internal_id` and picks samplers by declared `texture_use` instead of array position. See [systems/material-system.md](systems/material-system.md).

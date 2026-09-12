@@ -9,7 +9,7 @@ The single built-in shader: a vertex+fragment pair that reads a global UBO (proj
 - `engine/src/renderer/vulkan/shaders/vulkan_material_shader.h` / `vulkan_material_shader.c`.
 - `engine/src/renderer/vulkan/vulkan_shader_utils.h` / `vulkan_shader_utils.c` — SPIR-V loader.
 - `vulkan_material_shader` struct in `vulkan_types.inl:157`.
-- `vulkan_object_shader_object_state` (`vulkan_types.inl:146`) — per-object descriptor state with up to 3 frames of in-flight tracking.
+- `vulkan_material_shader_instance_state` (`vulkan_types.inl:146`) — per-object descriptor state with up to 3 frames of in-flight tracking.
 
 ## Public API
 
@@ -30,7 +30,7 @@ The single built-in shader: a vertex+fragment pair that reads a global UBO (proj
 **Pools**:
 
 - Global pool: `max_frames_in_flight` uniform-buffer descriptors.
-- Object pool: `VULKAN_OBJECT_MAX_OBJECT_COUNT (= 1024)` uniform buffers and 1024 combined image samplers; `FREE_DESCRIPTOR_SET_BIT` so individual sets can be freed (which `release_resources` would do).
+- Object pool: `VULKAN_MAX_MATERIAL_COUNT (= 1024)` uniform buffers and 1024 combined image samplers; `FREE_DESCRIPTOR_SET_BIT` so individual sets can be freed (which `release_resources` would do).
 
 **Buffers**:
 
@@ -43,7 +43,7 @@ The single built-in shader: a vertex+fragment pair that reads a global UBO (proj
 
 **Per-object** (`update_object`): writes `object_uniform_object` into the assigned slot of the object uniform buffer, writes the combined image-sampler descriptor with the texture's `vulkan_texture_data::image.view` and `sampler`, binds set 1.
 
-**Resource acquire**: returns a slot index from `0..VULKAN_OBJECT_MAX_OBJECT_COUNT`. The temporary code in `vulkan_renderer_backend_initialize` calls this once for object id 0 and never releases it.
+**Resource acquire**: returns a slot index from `0..VULKAN_MAX_MATERIAL_COUNT`. The temporary code in `vulkan_renderer_backend_initialize` calls this once for object id 0 and never releases it.
 
 `vulkan_shader_utils.create_shader_module` reads `assets/shaders/<name>.<type>.spv` from disk via the filesystem layer, calls `vkCreateShaderModule`, and fills a `vulkan_shader_stage` with the create info, the module handle, and the pipeline-stage create info ready to plug into the pipeline.
 
@@ -53,13 +53,13 @@ The single built-in shader: a vertex+fragment pair that reads a global UBO (proj
 - **Per-frame slots, descriptor generation** — `descriptor_states[d].generations[frame]` tracks when each descriptor was last written. Avoids redundant `vkUpdateDescriptorSets` when nothing changed.
 - **Push-constant slot reserved in pipeline layout, not yet used** — the model matrix is currently delivered via per-object UBO writes. Push constants (`c859db3`) live in the layout but the shader uses the UBO path. Switching is a shader edit, not a pipeline rebuild.
 - **Object pool sized 1024 with bump cursor** — temporary; `// TODO: Manage a free list of some kind here instead.` (`vulkan_types.inl:178`). After 1024 acquires the cursor will run off and `release_resources` won't recycle.
-- **Fragment-stage sampler bindings** — diffuse only for now. Adding normal/specular/etc. extends `VULKAN_OBJECT_SHADER_DESCRIPTOR_COUNT`.
+- **Fragment-stage sampler bindings** — diffuse only for now. Adding normal/specular/etc. extends `VULKAN_MATERIAL_SHADER_DESCRIPTOR_COUNT`.
 - **Renamed from `vulkan_object_shader`** — the descriptors are about material binding (texture, diffuse colour) more than per-object identity. The rename in `d1ce0fe` clarified the naming without changing structure.
 
 ## Known limitations
 
 - One shader, hardcoded by name `"Builtin.MaterialShader"`.
-- Object descriptor pool `maxSets = VULKAN_OBJECT_MAX_OBJECT_COUNT` — a hard cap.
+- Object descriptor pool `maxSets = VULKAN_MAX_MATERIAL_COUNT` — a hard cap.
 - No descriptor versioning across multiple textures yet — the diffuse sampler is rewritten unconditionally each draw.
 - The descriptor `generations` array is sized [3] (`vulkan_types.inl:140-141`) presumably for triple-buffering but `max_frames_in_flight = 2`. The third slot is unused.
 - `release_resources` is declared (`vulkan_material_shader.h:17`) but not yet wired into a per-object lifecycle.

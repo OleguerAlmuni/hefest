@@ -54,19 +54,16 @@ void filesystem_close(file_handle* handle) {
     }
 }
 
-b8 filesystem_read_line(file_handle* handle, char** line_buf) {
-    if (handle->handle) {
-        // Since we're reading a single file, it should be safe to assume this is enough characters.
-        char buffer[32000];
-        if (fgets(buffer, 32000, (FILE*)handle->handle) != 0) {
-            u64 length = strlen(buffer);
-            *line_buf = hallocate((sizeof(char) * length) + 1, MEMORY_TAG_STRING);
-            strcpy(*line_buf, buffer);
-            return true;
-        }
-    }
+b8 filesystem_read_line(file_handle* handle, u64 max_length, char** line_buf, u64* out_line_length) {
+	if (handle->handle && line_buf && out_line_length && max_length > 0) {
+		char* buf = *line_buf;
+		if (fgets(buf, max_length, (FILE*)handle->handle) != 0) {
+			*out_line_length = strlen(*line_buf);
+			return true;
+		}
+	}
 
-    return false;
+	return false;
 }
 
 b8 filesystem_write_line(file_handle* handle, const char* text) {

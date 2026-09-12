@@ -1,3 +1,5 @@
 bin/
 obj/
 memoria/
+compile_commands.json
+*.d

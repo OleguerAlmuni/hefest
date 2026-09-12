@@ -83,6 +83,30 @@ char* string_trim(char* str) {
     return str;
 }
 
+void string_mid(char* dest, const char* source, i32 start, i32 length) {
+    if (length == 0) {
+        return;
+    }
+    u64 src_length = string_length(source);
+    if (start >= src_length) {
+        dest[0] = 0;
+        return;
+    }
+    if (length > 0) {
+        for (u64 i = start, j = 0; j < length && source[i]; ++i, ++j) {
+            dest[j] = source[i];
+        }
+        dest[start + length] = 0;
+    } else {
+        // If a negative value is passed, proceed to the end of the string.
+        u64 j = 0;
+        for (u64 i = start; source[i]; ++i, ++j) {
+            dest[j] = source[i];
+        }
+        dest[start + j] = 0;
+    }
+}
+
 void string_substring(char* dest, const char* source, i32 start, i32 length) {
     if (length == 0) {
         return;

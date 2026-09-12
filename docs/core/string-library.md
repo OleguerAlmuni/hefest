@@ -32,11 +32,11 @@ The numeric/vector parsers are `sscanf`-based, with a quirk: every `string_to_*`
 
 ## Known limitations / open issues
 
-The current working tree (`engine/src/core/hstring.{h,c}`, uncommitted) introduces several issues:
-
-- `string_to_vec2/3/4` call `kzero_memory` (`hstring.c:132/142/152`) which doesn't exist anywhere in the engine — likely a leftover from a prefix rename. Should be `hzero_memory`. Will fail to link as-is.
-- `string_to_bool` (`hstring.c:262`) calls `strings_equali`, which doesn't exist. The header declares `strings_equal_insensitive`. Same root cause.
-- `strings_equal_insensitive` (`hstring.c:28-34`) checks `_GNUC_` (single underscores) rather than `__GNUC__`, then falls through with no return on the GCC path, returning garbage. The Windows path (`_MSC_VER`) is fine.
+- `strings_equal_insensitive` (`hstring.c:28-34`) selects `strcasecmp` under `__GNUC__` and
+  `_strcmpi` under `_MSC_VER`, with no `#else`. Both clang and GCC define `__GNUC__`, so the
+  supported toolchains are covered, but a compiler defining neither would fall off the end of
+  the function with no return value.
+- `string_substring` duplicates `string_mid`; one of the two should go.
 - All `string_to_*` parsers return `result != -1`, not `result == expected`. A partial parse is reported as success.
 - `string_substring` writes a terminator at `dest[start + length]` instead of `dest[length]` — the terminator lands at the wrong index when `start > 0`.
 - `string_index_of` declares its parameter as `char*` instead of `const char*`, forcing callers to cast.
