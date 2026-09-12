@@ -17,6 +17,7 @@ of them.
 - `engine/src/resources/resource_types.h` — `material`, `texture_map`, `texture_use`,
   `MATERIAL_MAX_NAME_LENGTH`.
 - `engine/src/systems/material_system.h` / `material_system.c`.
+- `engine/src/resources/loaders/material_loader.c` — parses the `.hmt` format.
 - `engine/src/renderer/vulkan/shaders/vulkan_material_shader.c` — per-material descriptor
   sets and the instance UBO.
 - `assets/materials/*.hmt` — material definitions.
@@ -24,7 +25,8 @@ of them.
 ## Public API
 
 - `struct material_system_config { u32 max_material_count; }` — `application.c` passes 4096.
-- `struct material_config { char name[]; b8 auto_release; vec4 diffuse_color; char diffuse_map_name[]; }`
+- `struct material_config { char name[]; material_type type; b8 auto_release; vec4 diffuse_color; char diffuse_map_name[]; }`
+- `enum material_type { MATERIAL_TYPE_WORLD, MATERIAL_TYPE_UI }`
 - `b8 material_system_initialize(memory_requirement, state, config)`
 - `void material_system_shutdown(state)`
 - `material* material_system_acquire(const char* name)` — loads `assets/materials/<name>.hmt`.
@@ -43,8 +45,10 @@ a flat `material[max_material_count]` array, then a hashtable backing block of
 pre-filled with `handle = INVALID_ID`, so a lookup on an unknown name still returns a valid
 sentinel rather than failing.
 
-`material_system_acquire(name)` formats `assets/materials/%s.hmt`, parses it into a
-`material_config`, and forwards to `acquire_from_config`.
+`material_system_acquire(name)` asks the [resource system](resource-system.md) for a
+`RESOURCE_TYPE_MATERIAL`, which the material loader resolves to
+`assets/materials/<name>.hmt` and parses into a `material_config`. That config is forwarded to
+`acquire_from_config` and the resource is then unloaded.
 
 `acquire_from_config(config)`:
 
@@ -80,9 +84,12 @@ version=0.1
 name=test_material
 diffuse_color=1.0 1.0 1.0 1.0
 diffuse_map_name=cobblestone_floor_tiled_32
+type=world
 ```
 
-`version` is parsed but not yet acted on. `diffuse_color` is four floats via
+`type` selects which shader the material binds to: `ui` routes it to the UI shader and the UI
+renderpass, anything else (including an absent `type`) means a world material. `version` is
+parsed but not yet acted on. `diffuse_color` is four floats via
 `string_to_vec4`; a parse failure warns and falls back to white. `diffuse_map_name` is a
 texture name **without** extension or directory — the texture system resolves it to
 `assets/textures/<name>.png`.
@@ -92,8 +99,9 @@ prefix became `h`.
 
 ## Renderer side
 
-`material_uniform_object` (`renderer_types.inl`) is the per-material UBO payload — just
-`diffuse_color` plus reserved vectors. `vulkan_material_shader` keeps
+`vulkan_material_shader_instance_ubo` (`vulkan_types.inl`) is the per-material UBO payload —
+just `diffuse_color` plus reserved vectors. The UI shader has its own twin,
+`vulkan_ui_shader_instance_ubo`. `vulkan_material_shader` keeps
 `instance_states[VULKAN_MAX_MATERIAL_COUNT]`, each holding one descriptor set per swapchain
 image and a `vulkan_descriptor_state` per binding tracking `generations` and `ids`.
 
@@ -105,6 +113,10 @@ Two details worth noting:
   because `release_resources` calls `vkFreeDescriptorSets`. Freeing individual sets from a
   pool without that flag is undefined behaviour.
 
+`renderer_create_material` and `destroy_material` switch on `material->type` to acquire and
+release resources from the right shader, and `draw_geometry` uses it to pick which shader's
+`set_model`/`apply_material` to call.
+
 Sampler binding is driven by `shader->sampler_uses[]` rather than a positional texture
 array, so binding 1 resolves through `TEXTURE_USE_MAP_DIFFUSE` to
 `material->diffuse_map.texture`. Adding a second map type means adding a use and a case,
@@ -112,8 +124,6 @@ not renumbering an array.
 
 ## Known limitations
 
-- Material file loading goes straight through `filesystem_*`. The resource system will take
-  this over and the `.hmt` parser will move to a dedicated material loader.
 - `internal_id` allocation in the Vulkan shader is a monotonically increasing counter with a
   `TODO` for a free list, so churning materials will exhaust `VULKAN_MAX_MATERIAL_COUNT`
   even if the live count stays low.

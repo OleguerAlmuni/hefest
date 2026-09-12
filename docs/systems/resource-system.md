@@ -85,6 +85,9 @@ runs the binary from `bin/` — so assets sit directly beneath the working direc
 | `vulkan_shader_utils.c` called `filesystem_read_all_bytes` | asks the binary loader for `RESOURCE_TYPE_BINARY` |
 | `material_config` lived in `material_system.h` | lives in `resource_types.h`, since the loader produces it |
 
+All four loaders delegate their `unload` to `resource_unload` in `loaders/loader_utils.c`,
+which frees the path and the data under a caller-supplied memory tag.
+
 `filesystem_read_all_bytes` also changed shape: it used to allocate `*out_bytes` for the
 caller, and now fills a caller-supplied buffer. Loaders size the buffer with the new
 `filesystem_size` first. `filesystem_read_all_text` is the same idea for text.
@@ -95,8 +98,6 @@ caller, and now fills a caller-supplied buffer. Loaders size the buffer with the
   all allocate straight from the global tagged allocator.
 - `resource_system_shutdown` only nulls the state pointer. Resources still held by callers at
   shutdown are not unloaded.
-- The four loaders' `unload` functions are near-identical; the shared part is factored out
-  later into `loader_utils`.
 - Extensions are hardcoded per loader with a `TODO: Try different extensions` — a texture must
   be `.png`, a material must be `.hmt`.
 - `load` writes `out_resource->loader_id` before calling the loader, so a failed load leaves a

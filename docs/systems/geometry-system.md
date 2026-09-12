@@ -21,13 +21,14 @@ times per frame with different model matrices.
 ## Public API
 
 - `struct geometry_system_config { u32 max_geometry_count; }` — `application.c` passes 4096.
-- `struct geometry_config { u32 vertex_count; vertex_3d* vertices; u32 index_count; u32* indices; char name[]; char material_name[]; }`
+- `struct geometry_config { u32 vertex_size; u32 vertex_count; void* vertices; u32 index_size; u32 index_count; void* indices; char name[]; char material_name[]; }`
 - `b8 geometry_system_initialize(memory_requirement, state, config)`
 - `void geometry_system_shutdown(state)`
 - `geometry* geometry_system_acquire_by_id(u32 id)`
 - `geometry* geometry_system_acquire_from_config(geometry_config config, b8 auto_release)`
 - `void geometry_system_release(geometry* geometry)`
 - `geometry* geometry_system_get_default()`
+- `geometry* geometry_system_get_default_2d()`
 - `geometry_config geometry_system_generate_plane_config(width, height, x_segments, y_segments, tile_x, tile_y, name, material_name)`
 - `#define DEFAULT_GEOMETRY_NAME "default"`
 
@@ -55,8 +56,8 @@ sets `reference_count = 1`, and calls `create_geometry`, which:
 `destroy_geometry`, which frees the GPU range, empties the name, and releases the material
 reference.
 
-The default geometry is a 10×10 quad built in code so the renderer always has something
-valid to draw.
+Two default geometries are built in code so the renderer always has something valid to draw:
+a 10×10 `vertex_3d` quad and a `vertex_2d` one for the UI pass.
 
 ## GPU side
 
@@ -101,4 +102,6 @@ allocation.
 - `geometry_config.vertices` / `.indices` are heap-allocated by
   `geometry_system_generate_plane_config` and must be freed by the caller. The header says as
   much and calls itself "not production code".
-- Vertex format is hardcoded to `vertex_3d`; 2D geometry needs a separate path.
+- `geometry_config` carries `vertex_size`/`index_size` and untyped `void*` buffers, so the
+  vertex format is a runtime value rather than a type. That is what lets the same system feed
+  both the 3D world pass and the 2D UI pass, at the cost of the compiler no longer checking it.

@@ -5,6 +5,7 @@
 #include "core/hstring.h"
 #include "resources/resource_types.h"
 #include "systems/resource_system.h"
+#include "loader_utils.h"
 
 #include "platform/filesystem.h"
 
@@ -52,21 +53,8 @@ b8 binary_loader_load(struct resource_loader* self, const char* name, resource* 
 }
 
 void binary_loader_unload(struct resource_loader* self, resource* resource) {
-    if (!self || !resource) {
+    if (!resource_unload(self, resource, MEMORY_TAG_ARRAY)) {
         HWARN("binary_loader_unload called with nullptr for self or resource.");
-        return;
-    }
-
-    u32 path_length = string_length(resource->full_path);
-    if (path_length) {
-        hfree(resource->full_path, sizeof(char) * path_length + 1, MEMORY_TAG_STRING);
-    }
-
-    if (resource->data) {
-        hfree(resource->data, resource->data_size, MEMORY_TAG_ARRAY);
-        resource->data = 0;
-        resource->data_size = 0;
-        resource->loader_id = INVALID_ID;
     }
 }
 
