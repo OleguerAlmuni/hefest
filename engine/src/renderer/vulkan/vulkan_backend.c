@@ -12,6 +12,8 @@
 
 #include "core/logger.h"
 #include "core/metrics.h"
+
+#include <stdlib.h>  // getenv, for the upload-strategy switch
 #include "core/hstring.h"
 #include "core/hmemory.h"
 #include "core/application.h"
@@ -46,8 +48,59 @@ void create_command_buffers(renderer_backend* backend);
 void regenerate_framebuffers();
 b8 recreate_swapchain(renderer_backend* backend);
 
+// Creates the pool used for device timing. Failure is not fatal: device timing
+// is a diagnostic, so the renderer carries on without it.
+static void create_timestamp_pool(void) {
+    context.timestamps_supported = false;
+    context.timestamp_period = context.device.properties.limits.timestampPeriod;
+
+    if (context.timestamp_period <= 0.0f) {
+        HWARN("Device reports no timestamp period. Device timing is disabled.");
+        return;
+    }
+
+    // timestampValidBits is reported per queue family and must be non-zero on
+    // the family the timestamps are written to.
+    u32 family_count = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(context.device.physical_device, &family_count, 0);
+    VkQueueFamilyProperties* families = hallocate(sizeof(VkQueueFamilyProperties) * family_count, MEMORY_TAG_RENDERER);
+    vkGetPhysicalDeviceQueueFamilyProperties(context.device.physical_device, &family_count, families);
+    u32 valid_bits = families[context.device.graphics_queue_index].timestampValidBits;
+    hfree(families, sizeof(VkQueueFamilyProperties) * family_count, MEMORY_TAG_RENDERER);
+
+    if (valid_bits == 0) {
+        HWARN("Graphics queue family reports no valid timestamp bits. Device timing is disabled.");
+        return;
+    }
+
+    VkQueryPoolCreateInfo pool_info = {VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};
+    pool_info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+    pool_info.queryCount = context.swapchain.max_frames_in_flight * 2;
+
+    VkResult result = vkCreateQueryPool(context.device.logical_device, &pool_info, context.allocator, &context.timestamp_pool);
+    if (result != VK_SUCCESS) {
+        HWARN("Failed to create the timestamp query pool: %s. Device timing is disabled.", vulkan_result_string(result, true));
+        return;
+    }
+
+    for (u32 i = 0; i < VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT; ++i) {
+        context.timestamp_slot_written[i] = false;
+    }
+
+    context.timestamps_supported = true;
+    HINFO("Device timing enabled. One timestamp tick is %.4f ns.", context.timestamp_period);
+}
+
 void upload_data_range(vulkan_context* context, VkCommandPool pool, VkFence fence, VkQueue queue, vulkan_buffer* buffer, u64 offset, u64 size, const void* data) {
     metrics_section_begin(METRICS_SECTION_UPLOAD);
+
+    // Direct path: the destination is visible to the host, so it can be written
+    // in place. No intermediate allocation, no copy command, no queue work.
+    if (context->buffers_host_visible) {
+        vulkan_buffer_load_data(context, buffer, offset, size, 0, data);
+        metrics_section_end(METRICS_SECTION_UPLOAD);
+        return;
+    }
 
     // Create a host-visible staging buffer to upload to. Mark it as the source of the transfer.
     VkBufferUsageFlags flags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
@@ -74,6 +127,12 @@ void free_data_range(vulkan_buffer* buffer, u64 offset, u64 size) {
 b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* application_name) {
     // Function pointers
     context.find_memory_index = find_memory_index;
+
+    // Upload strategy, selected from the environment so that both paths can be
+    // measured with the same binary under the same conditions. Anything other
+    // than an unset or empty variable requests direct writes.
+    const char* direct_upload_env = getenv("HEFEST_DIRECT_UPLOAD");
+    context.direct_upload_requested = (direct_upload_env != 0 && direct_upload_env[0] != '\0' && direct_upload_env[0] != '0');
 
     // TODO: custom allocator.
     context.allocator = 0;
@@ -260,6 +319,8 @@ b8 vulkan_renderer_backend_initialize(renderer_backend* backend, const char* app
         context.images_in_flight[i] = 0;
     }
 
+    create_timestamp_pool();
+
     // Create builtin shaders.
     if (!vulkan_material_shader_create(&context, &context.material_shader)) {
         HERROR("Error loading built-in basic lighting shader.");
@@ -285,6 +346,12 @@ void vulkan_renderer_backend_shutdown(renderer_backend* backend) {
     vkDeviceWaitIdle(context.device.logical_device);
 
     // Destroy in the opposite order of creation.
+
+    if (context.timestamp_pool) {
+        vkDestroyQueryPool(context.device.logical_device, context.timestamp_pool, context.allocator);
+        context.timestamp_pool = 0;
+        context.timestamps_supported = false;
+    }
 
     // Destroy buffers
     vulkan_buffer_destroy(&context, &context.object_vertex_buffer);
@@ -429,6 +496,26 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend* backend, f32 delta_time
         return false;
     }
 
+    // The fence above guarantees that the work previously submitted in this
+    // frame slot has finished, so the timestamps it wrote can now be read. The
+    // figure obtained is therefore the device time of the frame submitted
+    // max_frames_in_flight iterations ago, not of the one about to begin; over
+    // the averaging window this lag is immaterial.
+    if (context.timestamps_supported && context.timestamp_slot_written[context.current_frame]) {
+        u64 stamps[2] = {0, 0};
+        VkResult query_result = vkGetQueryPoolResults(
+            context.device.logical_device,
+            context.timestamp_pool,
+            context.current_frame * 2, 2,
+            sizeof(stamps), stamps, sizeof(u64),
+            VK_QUERY_RESULT_64_BIT);
+
+        if (query_result == VK_SUCCESS && stamps[1] > stamps[0]) {
+            f64 ticks = (f64)(stamps[1] - stamps[0]);
+            metrics_section_add_ms(METRICS_SECTION_GPU, (ticks * (f64)context.timestamp_period) / 1000000.0);
+        }
+    }
+
     // Acquire the next image from the swap chain. Pass along the semaphore that should signaled when this completes.
     // This same semaphore will later be waited on by the queue submission to ensure this image is available.
     if (!vulkan_swapchain_acquire_next_image_index(
@@ -459,6 +546,13 @@ b8 vulkan_renderer_backend_begin_frame(renderer_backend* backend, f32 delta_time
     vulkan_command_buffer* command_buffer = &context.graphics_command_buffers[context.image_index];
     vulkan_command_buffer_reset(command_buffer);
     vulkan_command_buffer_begin(command_buffer, false, false, false);
+
+    // Queries must be reset before being written again. Both the reset and the
+    // opening timestamp are recorded into this frame's command buffer.
+    if (context.timestamps_supported) {
+        vkCmdResetQueryPool(command_buffer->handle, context.timestamp_pool, context.current_frame * 2, 2);
+        vkCmdWriteTimestamp(command_buffer->handle, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, context.timestamp_pool, context.current_frame * 2);
+    }
 
     // Dynamic state
     VkViewport viewport;
@@ -573,6 +667,11 @@ b8 vulkan_renderer_end_renderpass(struct renderer_backend* backend, u8 renderpas
 b8 vulkan_renderer_backend_end_frame(renderer_backend* backend, f32 delta_time) {
 
     vulkan_command_buffer* command_buffer = &context.graphics_command_buffers[context.image_index];
+
+    if (context.timestamps_supported) {
+        vkCmdWriteTimestamp(command_buffer->handle, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, context.timestamp_pool, context.current_frame * 2 + 1);
+        context.timestamp_slot_written[context.current_frame] = true;
+    }
 
     vulkan_command_buffer_end(command_buffer);
 
@@ -818,7 +917,27 @@ b8 recreate_swapchain(renderer_backend* backend) {
 }
 
 b8 create_buffers(vulkan_context* context) {
-    VkMemoryPropertyFlagBits memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    u32 memory_property_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    context->buffers_host_visible = false;
+
+    // On a unified memory architecture the device may expose memory that is both
+    // device-local and host-visible, in which case geometry can be written
+    // straight into the destination buffer and the intermediate copy is
+    // unnecessary. Whether such a type exists is queried rather than assumed.
+    if (context->direct_upload_requested) {
+        const u32 direct_flags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT |
+                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                 VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+        if (find_memory_index(0xFFFFFFFF, direct_flags) != -1) {
+            memory_property_flags = direct_flags;
+            context->buffers_host_visible = true;
+            HINFO("Upload strategy: direct writes into device-local, host-visible memory.");
+        } else {
+            HINFO("Upload strategy: direct writes requested, but no device-local host-visible memory type exists. Falling back to an intermediate buffer.");
+        }
+    } else {
+        HINFO("Upload strategy: intermediate (staging) buffer.");
+    }
 
     const u64 vertex_buffer_size = sizeof(vertex_3d) * 1024 * 1024;
     if (!vulkan_buffer_create(
@@ -861,7 +980,7 @@ void vulkan_renderer_create_texture(const u8* pixels, texture* texture) {
     // NOTE: Assumes 8 bit per channel.
     VkFormat image_format = VK_FORMAT_R8G8B8A8_UNORM;
 
-    metrics_section_begin(METRICS_SECTION_UPLOAD);
+    metrics_section_begin(METRICS_SECTION_UPLOAD_IMAGE);
 
     // Create a staging buffer and load data into it.
     VkBufferUsageFlags usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
@@ -920,7 +1039,7 @@ void vulkan_renderer_create_texture(const u8* pixels, texture* texture) {
     // Destroy the staging buffer only after the command buffer has finished executing.
     vulkan_buffer_destroy(&context, &staging);
 
-    metrics_section_end(METRICS_SECTION_UPLOAD);
+    metrics_section_end(METRICS_SECTION_UPLOAD_IMAGE);
 
     // Create a sampler for the texture.
     VkSamplerCreateInfo sampler_info = {VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO};

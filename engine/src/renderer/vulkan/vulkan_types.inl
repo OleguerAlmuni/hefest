@@ -338,6 +338,26 @@ typedef struct vulkan_context {
     u32 image_index;
     u32 current_frame;
 
+    // Device timing. Two timestamp queries per in-flight frame: one written at
+    // the top of the frame's command buffer and one at the bottom. The results
+    // are read back once the fence for that frame slot has been signalled,
+    // which is max_frames_in_flight frames later.
+    // Upload strategy. When the device exposes memory that is both device-local
+    // and host-visible, geometry buffers can be written directly and the
+    // intermediate copy becomes unnecessary. Requested via the environment and
+    // granted only if such a memory type actually exists.
+    b8 direct_upload_requested;
+    b8 buffers_host_visible;
+
+    VkQueryPool timestamp_pool;
+    // Nanoseconds represented by one timestamp tick, from device limits.
+    f32 timestamp_period;
+    // False when the graphics queue family reports no valid timestamp bits, in
+    // which case device timing is unavailable and silently skipped.
+    b8 timestamps_supported;
+    // Whether the query slot for a given frame holds results yet.
+    b8 timestamp_slot_written[VULKAN_MAX_SWAPCHAIN_IMAGE_COUNT];
+
     b8 recreating_swapchain;
 
     vulkan_material_shader material_shader;

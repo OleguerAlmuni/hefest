@@ -12,7 +12,9 @@ static const char* section_names[METRICS_SECTION_MAX] = {
     "game update",
     "game render",
     "render     ",
-    "upload     "
+    "gpu        ",
+    "upload buf ",
+    "upload img "
 };
 
 typedef struct metrics_state {
@@ -130,6 +132,16 @@ void metrics_section_end(metrics_section section) {
     state_ptr->section_open[section] = false;
 }
 
+void metrics_section_add_ms(metrics_section section, f64 milliseconds) {
+    if (!state_ptr || section >= METRICS_SECTION_MAX) {
+        return;
+    }
+
+    state_ptr->current[section] += milliseconds;
+    state_ptr->total_ms[section] += milliseconds;
+    state_ptr->call_count[section]++;
+}
+
 f64 metrics_section_average_ms(metrics_section section) {
     if (!state_ptr || section >= METRICS_SECTION_MAX || state_ptr->sample_count == 0) {
         return 0.0;
@@ -241,9 +253,11 @@ const char* metrics_report_str(void) {
     if ((u64)offset < sizeof(buffer)) {
         snprintf(
             buffer + offset, sizeof(buffer) - offset,
-            "  uploads      %llu totalling %.3f ms\n",
+            "  uploads      buffers: %llu in %.3f ms   images: %llu in %.3f ms\n",
             metrics_section_call_count(METRICS_SECTION_UPLOAD),
-            metrics_section_total_ms(METRICS_SECTION_UPLOAD));
+            metrics_section_total_ms(METRICS_SECTION_UPLOAD),
+            metrics_section_call_count(METRICS_SECTION_UPLOAD_IMAGE),
+            metrics_section_total_ms(METRICS_SECTION_UPLOAD_IMAGE));
     }
 
     return buffer;

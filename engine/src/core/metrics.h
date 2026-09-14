@@ -33,8 +33,14 @@ typedef enum metrics_section {
     METRICS_SECTION_GAME_RENDER,
     // Recording and submitting the frame's rendering work.
     METRICS_SECTION_RENDER,
-    // Resource uploads to device memory.
+    // Time the device spent executing the frame, measured with timestamp
+    // queries and reported by the renderer. See metrics_section_add_ms.
+    METRICS_SECTION_GPU,
+    // Buffer uploads to device memory (geometry).
     METRICS_SECTION_UPLOAD,
+    // Image uploads to device memory (textures). Kept separate because only the
+    // buffer path can avoid the intermediate copy.
+    METRICS_SECTION_UPLOAD_IMAGE,
 
     METRICS_SECTION_MAX
 } metrics_section;
@@ -50,6 +56,14 @@ HAPI void metrics_frame_end(void);
 
 HAPI void metrics_section_begin(metrics_section section);
 HAPI void metrics_section_end(metrics_section section);
+
+/**
+ * Contributes an externally measured duration to a section, as though it had
+ * been bracketed with begin/end. This exists for durations that cannot be timed
+ * with the host clock, such as device execution time obtained from timestamp
+ * queries.
+ */
+HAPI void metrics_section_add_ms(metrics_section section, f64 milliseconds);
 
 /** Mean time for a section over the window, in milliseconds. */
 HAPI f64 metrics_section_average_ms(metrics_section section);
