@@ -1,0 +1,271 @@
+[FATAL]: A test message: 3.140000
+[ERROR]: An error occurred: 404
+[WARN]: This is a warning: be careful
+[INFO]: Some information: 42
+[DEBUG]: Debugging info: 2.718000
+[TRACE]: Trace message: tracing
+[INFO]: [chk] logging ok
+[INFO]: [chk] metrics ok
+[INFO]: Input subsystem initialized.
+[INFO]: [chk] input ok
+[INFO]: [chk] events registered ok
+[DEBUG]: Window resize: 1280, 701
+[WARN]: renderer backend does not exist to accept resize: 1280 701
+[INFO]: [chk] platform ok
+[TRACE]: Loader registered.
+[TRACE]: Loader registered.
+[TRACE]: Loader registered.
+[TRACE]: Loader registered.
+[INFO]: Resource system initialized with base path 'assets'.
+[INFO]: [chk] resource ok
+[DEBUG]: Required extensions:
+[DEBUG]: VK_KHR_surface
+[DEBUG]: VK_KHR_win32_surface
+[DEBUG]: VK_EXT_debug_utils
+[INFO]: Validation layers enabled. Enumerating...
+[INFO]: Searching for layer: VK_LAYER_KHRONOS_validation...
+[INFO]: Found.
+[INFO]: All required validation layers are present.
+[INFO]: Vulkan Instance created.
+[DEBUG]: Creating Vulkan debugger...
+[DEBUG]: Vulkan debugger created.
+[DEBUG]: Creating Vulkan surface...
+[DEBUG]: Vulkan surface created.
+[INFO]: Graphics | Present | Compute | Transfer | Name
+[INFO]:        1 |       1 |       1 |        1 | NVIDIA GeForce GTX 1660 Ti with Max-Q Design
+[INFO]: Device meets queue requirements.
+[TRACE]: Graphics family index: 0
+[TRACE]: Present family index: 2
+[TRACE]: Compute family index: 2
+[TRACE]: Transfer family index: 4
+[INFO]: Selected device: 'NVIDIA GeForce GTX 1660 Ti with Max-Q Design'.
+[INFO]: GPU Type is Discrete.
+[INFO]: GPU Driver Version: 566.56.0
+[INFO]: Vulkan API Version: 1.3.289
+[INFO]: Local GPU Memory: 5.83GiB
+[INFO]: Shared System Memory: 7.71GiB
+[INFO]: Local GPU Memory: 0.21GiB
+[INFO]: Physical Device selected.
+[INFO]: Creating logical device...
+[INFO]: Inserted device layer "VK_LAYER_KHRONOS_validation" (C:\VulkanSDK\1.4.313.1\Bin\.\VkLayer_khronos_validation.dll)
+[INFO]: Inserted device layer "VK_LAYER_NV_optimus" (C:\WINDOWS\System32\DriverStore\FileRepository\nvami.inf_amd64_8b7b93520ab179a6\.\nvoglv64.dll)
+[INFO]: vkCreateDevice layer callstack setup to:
+[INFO]:    <Application>
+[INFO]:      ||
+[INFO]:    <Loader>
+[INFO]:      ||
+[INFO]:    VK_LAYER_NV_optimus
+[INFO]:            Type: Implicit
+[INFO]:                Disable Env Var:  DISABLE_LAYER_NV_OPTIMUS_1
+[INFO]:            Manifest: C:\WINDOWS\System32\DriverStore\FileRepository\nvami.inf_amd64_8b7b93520ab179a6\nv-vk64.json
+[INFO]:            Library:  C:\WINDOWS\System32\DriverStore\FileRepository\nvami.inf_amd64_8b7b93520ab179a6\.\nvoglv64.dll
+[INFO]:      ||
+[INFO]:    VK_LAYER_KHRONOS_validation
+[INFO]:            Type: Explicit
+[INFO]:            Manifest: C:\VulkanSDK\1.4.313.1\Bin\VkLayer_khronos_validation.json
+[INFO]:            Library:  C:\VulkanSDK\1.4.313.1\Bin\.\VkLayer_khronos_validation.dll
+[INFO]:      ||
+[INFO]:    <Device>
+[INFO]:        Using "NVIDIA GeForce GTX 1660 Ti with Max-Q Design" with driver: "C:\WINDOWS\System32\DriverStore\FileRepository\nvami.inf_amd64_8b7b93520ab179a6\.\nvoglv64.dll"
+[INFO]: Logical device created.
+[INFO]: Queues obtained.
+[INFO]: Graphics command pool created.
+[TRACE]: [sc] format/present chosen
+[TRACE]: [sc] support requeried
+[TRACE]: [sc] minImageCount=2 maxImageCount=8 -> image_count=2 max_frames_in_flight=2 extent=1280x701
+[TRACE]: [sc] vkCreateSwapchainKHR ok
+[TRACE]: [sc] images obtained: image_count=2
+[TRACE]: [sc] image views created
+[TRACE]: [sc] depth format detected: 126
+[TRACE]: [img] entering: 1280x701 fmt=126 usage=0x20 find_memory_index=00007FFF820B3F94
+[TRACE]: [img] vkCreateImage ok
+[TRACE]: [img] memory requirements: size=5355520 bits=0x00000003
+[TRACE]: [img] memory_type=1
+[TRACE]: [img] vkAllocateMemory ok
+[TRACE]: [img] vkBindImageMemory ok
+[TRACE]: [img] creating view
+[TRACE]: [img] view created
+[TRACE]: [sc] depth image created
+[INFO]: Swapchain created successfully.
+[DEBUG]: Vulkan command buffers created.
+[INFO]: Device timing enabled. One timestamp tick is 1.0000 ns.
+[WARN]: vkCreateGraphicsPipelines(): pCreateInfos[0] (SPIR-V Interface) VK_SHADER_STAGE_VERTEX_BIT declared to output location 0 Component 0 but is not an Input declared by VK_SHADER_STAGE_FRAGMENT_BIT.
+[DEBUG]: Graphics pipeline created!
+[INFO]: [memtrace] size=512 filter=0x0000003b requested=0x0007 -> type 5 (heap 2, 214.00 MiB) flags=0x0007 [DEVICE_LOCAL HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[INFO]: [memtrace] size=65536 filter=0x0000003b requested=0x0007 -> type 5 (heap 2, 214.00 MiB) flags=0x0007 [DEVICE_LOCAL HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[DEBUG]: Graphics pipeline created!
+[INFO]: [memtrace] size=512 filter=0x0000003b requested=0x0007 -> type 5 (heap 2, 214.00 MiB) flags=0x0007 [DEVICE_LOCAL HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[INFO]: [memtrace] size=65536 filter=0x0000003b requested=0x0007 -> type 5 (heap 2, 214.00 MiB) flags=0x0007 [DEVICE_LOCAL HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[INFO]: [memtrace] strategy probe find_memory_index(0xFFFFFFFF, 0x0007) -> 5
+[INFO]: Upload strategy: direct writes into device-local, host-visible memory.
+[INFO]: [memtrace] size=33554432 filter=0x0000003b requested=0x0007 -> type 5 (heap 2, 214.00 MiB) flags=0x0007 [DEVICE_LOCAL HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[INFO]: [memtrace] size=4194304 filter=0x0000003b requested=0x0007 -> type 5 (heap 2, 214.00 MiB) flags=0x0007 [DEVICE_LOCAL HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[INFO]: Vulkan renderer initialized successfully.
+[INFO]: [chk] renderer ok
+[TRACE]: Creating default texture...
+[INFO]: [memtrace] size=262144 filter=0x0000003b requested=0x0006 -> type 3 (heap 1, 7894.80 MiB) flags=0x0006 [HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 3 (heap 1) flags=0x0006
+[INFO]: [memtrace]   candidate type 4 (heap 1) flags=0x000e
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[TRACE]: [img] entering: 256x256 fmt=37 usage=0x17 find_memory_index=00007FFF820B3F94
+[TRACE]: [img] vkCreateImage ok
+[TRACE]: [img] memory requirements: size=351232 bits=0x00000003
+[TRACE]: [img] memory_type=1
+[TRACE]: [img] vkAllocateMemory ok
+[TRACE]: [img] vkBindImageMemory ok
+[TRACE]: [img] creating view
+[TRACE]: [img] view created
+[INFO]: [chk] texture ok
+[TRACE]: Renderer: Material created.
+[INFO]: [chk] material ok
+[INFO]: [chk] geometry ok
+[INFO]: [memtrace] size=4096 filter=0x0000003b requested=0x0006 -> type 3 (heap 1, 7894.80 MiB) flags=0x0006 [HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 3 (heap 1) flags=0x0006
+[INFO]: [memtrace]   candidate type 4 (heap 1) flags=0x000e
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[TRACE]: [img] entering: 32x32 fmt=37 usage=0x17 find_memory_index=00007FFF820B3F94
+[TRACE]: [img] vkCreateImage ok
+[TRACE]: [img] memory requirements: size=7168 bits=0x00000003
+[TRACE]: [img] memory_type=1
+[TRACE]: [img] vkAllocateMemory ok
+[TRACE]: [img] vkBindImageMemory ok
+[TRACE]: [img] creating view
+[TRACE]: [img] view created
+[TRACE]: Texture 'cobblestone_floor_tiled_32' does not yet exist. Created, and ref_count is now 1.
+[TRACE]: Renderer: Material created.
+[TRACE]: Material 'test_material' does not yet exist. Created, and ref_count is now '1'.
+[INFO]: [chk] cube geometry ok
+[INFO]: [chk] ui verts built ok
+[INFO]: [memtrace] size=4096 filter=0x0000003b requested=0x0006 -> type 3 (heap 1, 7894.80 MiB) flags=0x0006 [HOST_VISIBLE HOST_COHERENT ]
+[INFO]: [memtrace]   candidate type 3 (heap 1) flags=0x0006
+[INFO]: [memtrace]   candidate type 4 (heap 1) flags=0x000e
+[INFO]: [memtrace]   candidate type 5 (heap 2) flags=0x0007
+[TRACE]: [img] entering: 32x32 fmt=37 usage=0x17 find_memory_index=00007FFF820B3F94
+[TRACE]: [img] vkCreateImage ok
+[TRACE]: [img] memory requirements: size=7168 bits=0x00000003
+[TRACE]: [img] memory_type=1
+[TRACE]: [img] vkAllocateMemory ok
+[TRACE]: [img] vkBindImageMemory ok
+[TRACE]: [img] creating view
+[TRACE]: [img] view created
+[TRACE]: Texture 'sandstone_blocks_tiled_32' does not yet exist. Created, and ref_count is now 1.
+[TRACE]: Renderer: Material created.
+[TRACE]: Material 'test_ui_material' does not yet exist. Created, and ref_count is now '1'.
+[DEBUG]: game_initialize() called.
+[INFO]: System memory use (tagged):
+  UNKNOWN    : 0.00B
+  ARRAY      : 0.00B
+  LINEAR_ALLC: 0.00B
+  DARRAY     : 7.04KiB
+  DICT       : 0.00B
+  RING_QUEUE : 0.00B
+  BST        : 0.00B
+  STRING     : 0.00B
+  APPLICATION: 0.00B
+  JOB        : 0.00B
+  TEXTURE    : 120.00B
+  MAT_INST   : 0.00B
+  RENDERER   : 88.00B
+  GAME       : 0.00B
+  TRANSFORM  : 0.00B
+  ENTITY     : 0.00B
+  ENTITY_NODE: 0.00B
+  SCENE      : 0.00B
+
+[INFO]: Frame timing over 119 frames (118.3 FPS):
+  frame        avg   8.451 ms   min   1.424 ms   max  34.286 ms
+  platform     avg   0.042 ms   min   0.002 ms   max   2.493 ms
+  game update  avg   0.003 ms   min   0.002 ms   max   0.015 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.001 ms
+  render       avg   8.404 ms   min   0.569 ms   max  34.276 ms
+  gpu          avg   0.032 ms   min   0.000 ms   max   0.042 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 0.019 ms   images: 3 in 5.599 ms
+
+[INFO]: Frame timing over 120 frames (120.0 FPS):
+  frame        avg   8.336 ms   min   7.136 ms   max   9.330 ms
+  platform     avg   0.004 ms   min   0.002 ms   max   0.019 ms
+  game update  avg   0.003 ms   min   0.002 ms   max   0.007 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   8.328 ms   min   7.130 ms   max   9.323 ms
+  gpu          avg   0.031 ms   min   0.028 ms   max   0.034 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 0.019 ms   images: 3 in 5.599 ms
+
+[INFO]: Frame timing over 120 frames (119.1 FPS):
+  frame        avg   8.398 ms   min   7.205 ms   max  17.320 ms
+  platform     avg   0.003 ms   min   0.002 ms   max   0.014 ms
+  game update  avg   0.003 ms   min   0.002 ms   max   0.008 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   8.391 ms   min   7.199 ms   max  17.306 ms
+  gpu          avg   0.068 ms   min   0.028 ms   max   0.105 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 0.019 ms   images: 3 in 5.599 ms
+
+[INFO]: Frame timing over 120 frames (120.1 FPS):
+  frame        avg   8.328 ms   min   7.277 ms   max   9.287 ms
+  platform     avg   0.003 ms   min   0.002 ms   max   0.015 ms
+  game update  avg   0.003 ms   min   0.002 ms   max   0.016 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   8.321 ms   min   7.270 ms   max   9.281 ms
+  gpu          avg   0.081 ms   min   0.069 ms   max   0.103 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 0.019 ms   images: 3 in 5.599 ms
+
+[INFO]: Frame timing over 120 frames (120.0 FPS):
+  frame        avg   8.330 ms   min   7.209 ms   max   9.549 ms
+  platform     avg   0.003 ms   min   0.002 ms   max   0.015 ms
+  game update  avg   0.003 ms   min   0.002 ms   max   0.006 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.001 ms
+  render       avg   8.324 ms   min   7.203 ms   max   9.543 ms
+  gpu          avg   0.076 ms   min   0.072 ms   max   0.086 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 0.019 ms   images: 3 in 5.599 ms
+
+[INFO]: Frame timing over 120 frames (120.0 FPS):
+  frame        avg   8.333 ms   min   7.327 ms   max   9.515 ms
+  platform     avg   0.003 ms   min   0.002 ms   max   0.013 ms
+  game update  avg   0.003 ms   min   0.001 ms   max   0.005 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.001 ms
+  render       avg   8.327 ms   min   7.322 ms   max   9.509 ms
+  gpu          avg   0.099 ms   min   0.068 ms   max   0.126 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 0.019 ms   images: 3 in 5.599 ms
+
+[INFO]: Frame timing over 120 frames (120.1 FPS):
+  frame        avg   8.329 ms   min   7.330 ms   max   9.507 ms
+  platform     avg   0.003 ms   min   0.002 ms   max   0.014 ms
+  game update  avg   0.003 ms   min   0.002 ms   max   0.004 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   8.322 ms   min   7.323 ms   max   9.501 ms
+  gpu          avg   0.076 ms   min   0.072 ms   max   0.083 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 0.019 ms   images: 3 in 5.599 ms
+
+[INFO]: EVENT_CODE_APPLICATION_QUIT recieved, shutting down.
+
+[TRACE]: Destroying material 'test_material'...
+[TRACE]: Released texture 'cobblestone_floor_tiled_32'. Texture unloaded because reference count=0 and auto_release=true.
+[TRACE]: Destroying material 'test_ui_material'...
+[TRACE]: Released texture 'sandstone_blocks_tiled_32'. Texture unloaded because reference count=0 and auto_release=true.
+[TRACE]: Destroying material 'default'...
+[DEBUG]: Destroying Vulkan device...
+[INFO]: Destroying command pools...
+[INFO]: Destroying logical device...
+[INFO]: Releasing physical device resources...
+[DEBUG]: Destroying Vulkan surface...
+[DEBUG]: Destroying Vulkan debugger...
+[DEBUG]: Destroying Vulkan instance...

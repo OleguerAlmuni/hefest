@@ -3,3 +3,6 @@ obj/
 memoria/
 compile_commands.json
 *.d
+
+# Registre que el motor genera en executar-se des de l'arrel
+/console.log
