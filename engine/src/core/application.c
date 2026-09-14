@@ -258,7 +258,8 @@ b8 application_create(game* game_inst) {
     string_ncopy(ui_config.material_name, "test_ui_material", MATERIAL_MAX_NAME_LENGTH);
     string_ncopy(ui_config.name, "test_ui_geometry", GEOMETRY_NAME_MAX_LENGTH);
 
-    const f32 f = 512.0f;
+    // Side of the test UI quad, in the orthographic space of 1280x720.
+    const f32 f = 128.0f;
     vertex_2d uiverts[4];
     uiverts[0].position.x = 0.0f;               // 0    3
     uiverts[0].position.y = 0.0f;               //
@@ -365,7 +366,7 @@ b8 application_run() {
 
             geometry_render_data test_ui_render;
             test_ui_render.geometry = app_state->test_ui_geometry;
-            test_ui_render.model = mat4_translation((vec3){0, 0, 0});
+            test_ui_render.model = mat4_translation((vec3){24, 24, 0});
             packet.ui_geometry_count = 1;
             packet.ui_geometries = &test_ui_render;
             // TODO: end temp
