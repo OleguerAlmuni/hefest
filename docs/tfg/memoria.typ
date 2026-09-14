@@ -2237,6 +2237,116 @@ presentació, que en pot retornar més dels demanats, com efectivament fa a l'eq
 A. L'anomalia no afecta cap de les mesures del capítol 6, que no depenen del
 nombre d'imatges, i es recull com a treball pendent.
 
+=== Recursos de #f[shader] i freqüència d'actualització
+
+La secció anterior tracta la duplicació dels objectes de sincronització. La
+mateixa qüestió —quantes còpies cal mantenir d'una dada perquè l'amfitrió pugui
+escriure-la mentre el dispositiu encara llegeix l'anterior— determina també com
+s'organitzen les dades que els #f[shaders] consumeixen, i val la pena
+descriure-ho perquè és on conflueixen dues recomanacions independents que el
+capítol 7 comenta.
+
+==== El criteri
+
+Un #f[shader] de materials necessita dades que canvien a ritmes molt diferents.
+Les matrius de projecció i de vista i els paràmetres de la llum canvien un cop
+per #f[frame]\; el color difús i la textura canvien quan canvia el material; la
+matriu de model canvia a cada objecte dibuixat. Tractar-les totes igual és
+ineficient en un sentit o en l'altre: escriure-les totes a cada dibuix repeteix
+feina, i escriure-les totes un cop per #f[frame] és directament incorrecte per a
+les de l'últim grup.
+
+El criteri adoptat és agrupar-les per freqüència d'actualització i assignar a
+cada grup el mecanisme de l'API que li correspon. L'especificació ordena els
+recursos accessibles des d'un #f[shader] segons el cost d'actualitzar-los, i
+situa les constants d'inserció com el camí de menor cost per a quantitats
+petites @vulkanspec. La bibliografia d'arquitectura de motors hi arriba pel seu
+compte, i per raons anteriors a aquesta generació d'API @gregory2018.
+
+==== Els tres nivells
+
+El motor en fa tres grups, que la @tab:descriptors recull.
+
+#figure(
+  table(
+    columns: (auto, 1fr, 1.15fr, auto),
+    inset: 6pt,
+    align: (left, left, left, right),
+    stroke: 0.4pt + rgb("#ccc"),
+    table.header([*Freqüència*], [*Mecanisme*], [*Contingut*], [*Mida*]),
+    [Per #f[frame]],
+      [Conjunt 0: búfer uniforme],
+      [Projecció, vista, color ambient, direcció i color de la llum, posició de
+       la càmera],
+      [256 B],
+    [Per material],
+      [Conjunt 1: búfer uniforme i mostrejador],
+      [Color difús i mapa difús],
+      [64 B],
+    [Per objecte],
+      [Constants d'inserció],
+      [Matriu de model],
+      [64 B],
+  ),
+  caption: [Recursos del #f[shader] de materials, agrupats per freqüència
+    d'actualització.],
+) <tab:descriptors>
+
+El repartiment entre el conjunt global i el de material no és només
+organitzatiu: vincular un conjunt de descriptors invalida els conjunts de
+numeració superior, de manera que col·locar allò que canvia menys sovint als
+números baixos redueix el nombre de vinculacions que cal refer @vulkanspec.
+
+La matriu de model no passa per cap descriptor. S'escriu directament al
+#f[command buffer] amb l'ordre d'inserció, immediatament abans de cada dibuix,
+de manera que no necessita ni reserva de memòria ni conjunt ni actualització.
+
+==== La duplicació, i per què
+
+Cada conjunt de descriptors existeix tantes vegades com imatges té la cadena
+d'intercanvi, i s'indexa per índex d'imatge. La raó és la mateixa que justifica
+els vectors de la secció anterior: mentre el dispositiu executa el #f[frame]
+anterior encara llegeix el conjunt que el va servir, de manera que escriure-hi
+el contingut del #f[frame] següent el corrompria.
+
+Convé assenyalar que la reserva de descriptors es dimensiona pel nombre
+d'imatges i no pel de #f[frames] en vol. Són dues xifres que poden divergir
+—s'ha vist que a l'equip A divergeixen— i dimensionar la reserva per la menor
+de les dues esgotaria els conjunts disponibles en indexar per imatge.
+
+==== Evitar l'escriptura innecessària
+
+Duplicar els conjunts resol la correcció però no estalvia feina: reescriure'ls a
+cada #f[frame] continuaria sent innecessari, ja que el contingut d'un material
+poques vegades canvia. Aquí és on entra el mecanisme d'identificador i generació
+descrit al capítol 4. Cada descriptor desa la generació del recurs que hi té
+vinculat, i l'operació d'actualització només s'emet quan aquesta generació
+difereix de la del recurs. Un material estable es vincula sense reescriure's
+mai. És l'ús concret que justifica que el model de recursos mantingui un camp
+de generació al costat de l'identificador.
+
+==== Costos i una assumpció conservadora
+
+Dos aspectes d'aquest disseny mereixen consignar-se.
+
+El primer és que tant el bloc global com el de material reserven espai que avui
+no s'utilitza: el global manté seixanta-quatre bytes marcats com a reservats i el
+de material quaranta-vuit. La raó és que modificar la mida d'aquests blocs obliga
+a revisar l'alineació de tot el que hi ha a continuació, i mantenir-la fixa fa
+que afegir-hi un camp no en tingui cap conseqüència.
+
+El segon és una assumpció que el codi fa i que val la pena corregir. El rang de
+constants d'inserció es declara de cent vint-i-vuit bytes tot i que només se
+n'escriuen seixanta-quatre, i un comentari al #f[shader] justifica la xifra dient
+que és el total garantit. Ho era: cent vint-i-vuit bytes és el mínim que
+l'especificació garanteix per al nucli de Vulkan, però la versió 1.4 —que és la
+que el motor sol·licita— l'eleva a dos-cents cinquanta-sis @vulkanspec. La
+declaració actual compromet, doncs, tot el pressupost garantit del nucli per a
+una dada que n'ocupa la meitat, sobre la base d'un límit més estricte del que la
+versió emprada imposa. A diferència dels supòsits que descriu la secció següent,
+aquest és conservador i no provoca cap fallada; però és igualment un valor escrit
+al codi en lloc de consultat.
+
 === Supòsits sobre el dispositiu
 
 La secció anterior descriu el disseny tal com és avui. Arribar-hi va requerir
@@ -3245,9 +3355,9 @@ un dimensionament explícit perquè no reserva memòria en nom de l'aplicació
 servir és la composició d'ambdues.
 
 El mateix passa amb l'ordenació dels recursos de #f[shader] per freqüència
-d'actualització, que la bibliografia recomana per raons de rendiment anteriors a
-Vulkan @gregory2018 i que l'especificació recomana per raons relatives a la
-invalidació de conjunts de descriptors @vulkanspec. Aquesta convergència
+d'actualització, descrita a §5.3: la bibliografia la recomana per raons de
+rendiment anteriors a Vulkan @gregory2018 i l'especificació per raons relatives a
+la invalidació de conjunts de descriptors @vulkanspec. Aquesta convergència
 suggereix que una part considerable de l'estructura d'un motor no és
 negociable.
 
@@ -3656,9 +3766,9 @@ d'aquesta memòria.
     [Semàfors: dependència entre operacions de cua],
     [§5.3], [@vulkanspec §7.4, @arntzen_sync], [`vulkan/vulkan_backend.c`],
     [Conjunts de descriptors ordenats per freqüència],
-    [§4.6, §7.1], [@vulkanspec §17.2], [`vulkan/shaders/vulkan_material_shader.c`],
+    [§4.6, §5.3], [@vulkanspec §17.2], [`vulkan/shaders/vulkan_material_shader.c`],
     [Constants d'inserció per a la dada de màxima freqüència],
-    [§3.1, §7.1], [@vulkanspec §17.10], [`vulkan/shaders/vulkan_material_shader.c`],
+    [§5.3], [@vulkanspec §17.10], [`vulkan/shaders/vulkan_material_shader.c`],
     [#f[Shaders] compilats a SPIR-V abans de l'execució],
     [§2.4, §3.4], [@vulkanspec §9.2], [`post-build.sh`, `post-build.bat`],
     [Capes de validació només en compilacions de depuració],
