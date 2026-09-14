@@ -168,11 +168,14 @@ void create(vulkan_context* context, u32 width, u32 height, vulkan_swapchain* sw
     swapchain_create_info.imageArrayLayers = 1;
     swapchain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    // Setup the queue family indices
+    // Setup the queue family indices. The array must outlive the block below:
+    // pQueueFamilyIndices is still read by vkCreateSwapchainKHR further down, so
+    // a block-scoped array would leave a dangling pointer. This only matters on
+    // devices where the graphics and present families differ.
+    u32 queueFamilyIndices[2] = {
+        (u32)context->device.graphics_queue_index,
+        (u32)context->device.present_queue_index};
     if (context->device.graphics_queue_index != context->device.present_queue_index) {
-        u32 queueFamilyIndices[] = {
-            (u32)context->device.graphics_queue_index,
-            (u32)context->device.present_queue_index};
         swapchain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         swapchain_create_info.queueFamilyIndexCount = 2;
         swapchain_create_info.pQueueFamilyIndices = queueFamilyIndices;
