@@ -1,0 +1,192 @@
+[0;41m[FATAL]: A test message: 3.140000
+[0m[1;31m[ERROR]: An error occurred: 404
+[0m[1;33m[WARN]: This is a warning: be careful
+[0m[1;32m[INFO]: Some information: 42
+[0m[1;34m[DEBUG]: Debugging info: 2.718000
+[0m[1;30m[TRACE]: Trace message: tracing
+[0m[1;32m[INFO]: Input subsystem initialized.
+[0m[1;30m[TRACE]: Loader registered.
+[0m[1;30m[TRACE]: Loader registered.
+[0m[1;30m[TRACE]: Loader registered.
+[0m[1;30m[TRACE]: Loader registered.
+[0m[1;32m[INFO]: Resource system initialized with base path 'assets'.
+[0m[1;34m[DEBUG]: Required extensions:
+[0m[1;34m[DEBUG]: VK_KHR_surface
+[0m[1;34m[DEBUG]: VK_KHR_xcb_surface
+[0m[1;34m[DEBUG]: VK_EXT_debug_utils
+[0m[1;32m[INFO]: Validation layers enabled. Enumerating...
+[0m[1;32m[INFO]: Searching for layer: VK_LAYER_KHRONOS_validation...
+[0m[1;32m[INFO]: Found.
+[0m[1;32m[INFO]: All required validation layers are present.
+[0m[1;32m[INFO]: Vulkan Instance created.
+[0m[1;34m[DEBUG]: Creating Vulkan debugger...
+[0m[1;34m[DEBUG]: Vulkan debugger created.
+[0m[1;34m[DEBUG]: Creating Vulkan surface...
+[0m[1;34m[DEBUG]: Vulkan surface created.
+[0m[1;32m[INFO]: linux_read_sorted_physical_devices:
+[0m[1;32m[INFO]:      Original order:
+[0m[1;32m[INFO]:            [0] Intel(R) Iris(R) Xe Graphics (ADL GT2)
+[0m[1;32m[INFO]:      Sorted order:
+[0m[1;32m[INFO]:            [0] Intel(R) Iris(R) Xe Graphics (ADL GT2)  
+[0m[1;32m[INFO]: linux_read_sorted_physical_devices:
+[0m[1;32m[INFO]:      Original order:
+[0m[1;32m[INFO]:            [0] Intel(R) Iris(R) Xe Graphics (ADL GT2)
+[0m[1;32m[INFO]:      Sorted order:
+[0m[1;32m[INFO]:            [0] Intel(R) Iris(R) Xe Graphics (ADL GT2)  
+[0m[1;32m[INFO]: linux_read_sorted_physical_devices:
+[0m[1;32m[INFO]:      Original order:
+[0m[1;32m[INFO]:            [0] Intel(R) Iris(R) Xe Graphics (ADL GT2)
+[0m[1;32m[INFO]:      Sorted order:
+[0m[1;32m[INFO]:            [0] Intel(R) Iris(R) Xe Graphics (ADL GT2)  
+[0m[1;32m[INFO]: linux_read_sorted_physical_devices:
+[0m[1;32m[INFO]:      Original order:
+[0m[1;32m[INFO]:            [0] Intel(R) Iris(R) Xe Graphics (ADL GT2)
+[0m[1;32m[INFO]:      Sorted order:
+[0m[1;32m[INFO]:            [0] Intel(R) Iris(R) Xe Graphics (ADL GT2)  
+[0m[1;32m[INFO]: Removing driver /usr/lib/libvulkan_intel_hasvk.so due to not having any physical devices
+[0m[1;32m[INFO]: Device is not a discrete GPU, and one is required. Skipping.
+[0m[1;32m[INFO]: No discrete GPU found. Falling back to a non-discrete device.
+[0m[1;32m[INFO]: Graphics | Present | Compute | Transfer | Name
+[0m[1;32m[INFO]:        1 |       1 |       1 |        1 | Intel(R) Iris(R) Xe Graphics (ADL GT2)
+[0m[1;32m[INFO]: Device meets queue requirements.
+[0m[1;30m[TRACE]: Graphics family index: 0
+[0m[1;30m[TRACE]: Present family index: 0
+[0m[1;30m[TRACE]: Compute family index: 0
+[0m[1;30m[TRACE]: Transfer family index: 0
+[0m[1;32m[INFO]: Selected device: 'Intel(R) Iris(R) Xe Graphics (ADL GT2)'.
+[0m[1;32m[INFO]: GPU type is Integrated
+[0m[1;32m[INFO]: GPU Driver Version: 26.2.1
+[0m[1;32m[INFO]: Vulkan API Version: 1.4.354
+[0m[1;32m[INFO]: Local GPU Memory: 11.48GiB
+[0m[1;32m[INFO]: Physical Device selected.
+[0m[1;32m[INFO]: Creating logical device...
+[0m[1;32m[INFO]: Inserted device layer "VK_LAYER_KHRONOS_validation" (/usr/lib/libVkLayer_khronos_validation.so)
+[0m[1;32m[INFO]: Failed to find vkGetDeviceProcAddr in layer "/usr/lib/libVkLayer_MESA_device_select.so"
+[0m[1;32m[INFO]: vkCreateDevice layer callstack setup to:
+[0m[1;32m[INFO]:    <Application>
+[0m[1;32m[INFO]:      ||
+[0m[1;32m[INFO]:    <Loader>
+[0m[1;32m[INFO]:      ||
+[0m[1;32m[INFO]:    VK_LAYER_KHRONOS_validation
+[0m[1;32m[INFO]:            Type: Explicit
+[0m[1;32m[INFO]:            Enabled By: By the Application
+[0m[1;32m[INFO]:            Manifest: /usr/share/vulkan/explicit_layer.d/VkLayer_khronos_validation.json
+[0m[1;32m[INFO]:            Library:  /usr/lib/libVkLayer_khronos_validation.so
+[0m[1;32m[INFO]:      ||
+[0m[1;32m[INFO]:    <Device>
+[0m[1;32m[INFO]:        Using "Intel(R) Iris(R) Xe Graphics (ADL GT2)" with driver: "/usr/lib/libvulkan_intel.so"
+[0m[1;32m[INFO]: Logical device created.
+[0m[1;32m[INFO]: Queues obtained.
+[0m[1;32m[INFO]: Graphics command pool created.
+[0m[1;32m[INFO]: Swapchain created successfully.
+[0m[1;34m[DEBUG]: Vulkan command buffers created.
+[0m[1;32m[INFO]: Device timing enabled. One timestamp tick is 52.0833 ns.
+[0m[1;33m[WARN]: vkCreateGraphicsPipelines(): pCreateInfos[0] (SPIR-V Interface) [VK_SHADER_STAGE_VERTEX_BIT] has an Output value declared at Location 0 Component 0, but there is no corresponding Input declared in [VK_SHADER_STAGE_FRAGMENT_BIT].
+This is not invalid, but the write to the unused Output is discarded.
+The Output variable is:
+  pointer to Output -> sint32
+[0m[1;34m[DEBUG]: Graphics pipeline created!
+[0m[1;34m[DEBUG]: Graphics pipeline created!
+[0m[1;32m[INFO]: Upload strategy: intermediate (staging) buffer.
+[0m[1;32m[INFO]: Vulkan renderer initialized successfully.
+[0m[1;30m[TRACE]: Creating default texture...
+[0m[1;30m[TRACE]: Renderer: Material created.
+[0m[1;30m[TRACE]: Texture 'cobblestone_floor_tiled_32' does not yet exist. Created, and ref_count is now 1.
+[0m[1;30m[TRACE]: Renderer: Material created.
+[0m[1;30m[TRACE]: Material 'test_material' does not yet exist. Created, and ref_count is now '1'.
+[0m[1;30m[TRACE]: Texture 'sandstone_blocks_tiled_32' does not yet exist. Created, and ref_count is now 1.
+[0m[1;30m[TRACE]: Renderer: Material created.
+[0m[1;30m[TRACE]: Material 'test_ui_material' does not yet exist. Created, and ref_count is now '1'.
+[0m[1;34m[DEBUG]: game_initialize() called.
+[0m[1;32m[INFO]: System memory use (tagged):
+  UNKNOWN    : 0.00B
+  ARRAY      : 0.00B
+  LINEAR_ALLC: 0.00B
+  DARRAY     : 4.05KiB
+  DICT       : 0.00B
+  RING_QUEUE : 0.00B
+  BST        : 0.00B
+  STRING     : 0.00B
+  APPLICATION: 0.00B
+  JOB        : 0.00B
+  TEXTURE    : 120.00B
+  MAT_INST   : 0.00B
+  RENDERER   : 96.00B
+  GAME       : 0.00B
+  TRANSFORM  : 0.00B
+  ENTITY     : 0.00B
+  ENTITY_NODE: 0.00B
+  SCENE      : 0.00B
+
+[0m[1;34m[DEBUG]: Window resize: 622, 662
+[0m[1;32m[INFO]: Vulkan renderer backend->resized: w/h/gen: 622/662/1
+[0m[1;32m[INFO]: Swapchain created successfully.
+[0m[1;34m[DEBUG]: Vulkan command buffers created.
+[0m[1;32m[INFO]: Resized, booting.
+[0m[1;32m[INFO]: Frame timing over 120 frames (2179.6 FPS):
+  frame        avg   0.459 ms   min   0.164 ms   max   1.384 ms
+  platform     avg   0.001 ms   min   0.000 ms   max   0.005 ms
+  game update  avg   0.000 ms   min   0.000 ms   max   0.001 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   0.457 ms   min   0.162 ms   max   1.371 ms
+  gpu          avg   0.100 ms   min   0.042 ms   max   0.104 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 12.454 ms   images: 3 in 14.126 ms
+
+[0m[1;34m[DEBUG]: '
+[0m[1;32m[INFO]: Frame timing over 120 frames (1827.2 FPS):
+  frame        avg   0.547 ms   min   0.155 ms   max   3.004 ms
+  platform     avg   0.002 ms   min   0.000 ms   max   0.008 ms
+  game update  avg   0.001 ms   min   0.000 ms   max   0.013 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   0.544 ms   min   0.153 ms   max   3.002 ms
+  gpu          avg   0.099 ms   min   0.026 ms   max   0.107 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 12.454 ms   images: 3 in 14.126 ms
+
+[0m[1;32m[INFO]: Frame timing over 120 frames (1193.9 FPS):
+  frame        avg   0.838 ms   min   0.162 ms   max   3.674 ms
+  platform     avg   0.002 ms   min   0.000 ms   max   0.016 ms
+  game update  avg   0.001 ms   min   0.000 ms   max   0.007 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   0.834 ms   min   0.160 ms   max   3.672 ms
+  gpu          avg   0.101 ms   min   0.027 ms   max   0.108 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 12.454 ms   images: 3 in 14.126 ms
+
+[0m[1;32m[INFO]: Frame timing over 120 frames (1362.5 FPS):
+  frame        avg   0.734 ms   min   0.130 ms   max   3.321 ms
+  platform     avg   0.003 ms   min   0.000 ms   max   0.018 ms
+  game update  avg   0.001 ms   min   0.000 ms   max   0.003 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   0.729 ms   min   0.128 ms   max   3.319 ms
+  gpu          avg   0.098 ms   min   0.026 ms   max   0.115 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 12.454 ms   images: 3 in 14.126 ms
+
+[0m[1;32m[INFO]: Frame timing over 120 frames (1588.4 FPS):
+  frame        avg   0.630 ms   min   0.156 ms   max   3.559 ms
+  platform     avg   0.001 ms   min   0.000 ms   max   0.006 ms
+  game update  avg   0.001 ms   min   0.000 ms   max   0.002 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   0.627 ms   min   0.154 ms   max   3.556 ms
+  gpu          avg   0.102 ms   min   0.026 ms   max   0.111 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 12.454 ms   images: 3 in 14.126 ms
+
+[0m[1;32m[INFO]: Frame timing over 120 frames (1203.2 FPS):
+  frame        avg   0.831 ms   min   0.186 ms   max   4.045 ms
+  platform     avg   0.002 ms   min   0.000 ms   max   0.009 ms
+  game update  avg   0.001 ms   min   0.000 ms   max   0.004 ms
+  game render  avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  render       avg   0.827 ms   min   0.182 ms   max   4.041 ms
+  gpu          avg   0.102 ms   min   0.026 ms   max   0.109 ms
+  upload buf   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  upload img   avg   0.000 ms   min   0.000 ms   max   0.000 ms
+  uploads      buffers: 8 in 12.454 ms   images: 3 in 14.126 ms
+

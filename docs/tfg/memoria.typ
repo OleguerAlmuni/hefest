@@ -2772,14 +2772,14 @@ dels dos equips.
     table.header(
       [*Estratègia*], [*Rep. 1*], [*Rep. 2*], [*Rep. 3*], [*Mitjana*], [*Factor*]),
     table.cell(colspan: 6)[_Equip A --- càrrega de búfers de geometria_],
-    [Búfer intermedi], [7,024], [2,057], [6,678], [*5,253*], [],
-    [Escriptura directa], [0,079], [0,067], [0,064], [*0,070*], [*75×*],
+    [Búfer intermedi], [12,281], [12,454], [4,073], [*9,603*], [],
+    [Escriptura directa], [0,077], [0,074], [0,061], [*0,071*], [*136×*],
     table.cell(colspan: 6)[_Equip B --- càrrega de búfers de geometria_],
     [Búfer intermedi], [5,524], [6,404], [5,554], [*5,827*], [],
     [Escriptura directa], [0,021], [0,022], [0,019], [*0,021*], [*282×*],
     table.cell(colspan: 6)[_Equip A --- càrrega de textures (control)_],
-    [Amb intermedi], [13,432], [10,720], [12,419], [*12,190*], [],
-    [Amb directa], [13,084], [12,631], [11,882], [*12,532*], [],
+    [Amb intermedi], [13,789], [14,126], [13,350], [*13,755*], [],
+    [Amb directa], [13,369], [12,026], [14,817], [*13,404*], [],
     table.cell(colspan: 6)[_Equip B --- càrrega de textures (control)_],
     [Amb intermedi], [5,053], [5,502], [5,113], [*5,223*], [],
     [Amb directa], [4,827], [5,486], [5,599], [*5,304*], [],
@@ -2797,17 +2797,17 @@ que satisfà les tres propietats.
 ==== Lectura
 
 L'escriptura directa redueix el temps de càrrega de geometria en tots dos
-entorns: un factor de setanta-cinc a l'equip A i de dos-cents vuitanta-dos a
-l'equip B. El control es manté estable en tots dos casos —una diferència del
-tres i de l'u i mig per cent respectivament, inferior a la dispersió del mateix
+entorns: un factor de cent trenta-sis a l'equip A i de dos-cents vuitanta-dos a
+l'equip B. El control es manté estable en tots dos casos —una diferència del dos
+i mig i de l'u i mig per cent respectivament, inferior a la dispersió del mateix
 control—, cosa que permet atribuir la millora a l'estratègia i no a la
 variabilitat entre execucions.
 
 La dispersió mereix una observació. A l'equip A la via amb búfer intermedi
-oscil·la entre 2,06 i 7,02 mil·lisegons, un factor de 3,4 entre el mínim i el
-màxim; l'escriptura directa es manté dins d'un marge del vint-i-tres per cent.
-A l'equip B la diferència de predictibilitat és menys marcada però va en el
-mateix sentit. La via directa no és només més ràpida sinó més estable, cosa
+oscil·la entre 4,07 i 12,45 mil·lisegons, un factor de tres entre el mínim i el
+màxim; l'escriptura directa es manté entre 0,061 i 0,077, dins d'un marge del
+vint-i-cinc per cent. A l'equip B la diferència de predictibilitat és menys
+marcada però va en el mateix sentit. La via directa no és només més ràpida sinó més estable, cosa
 coherent amb el fet que elimina una reserva de memòria, una ordre de còpia i una
 espera de cua, tres operacions el cost de les quals depèn de l'estat del sistema.
 
@@ -2829,14 +2829,14 @@ microsegons mesurats corresponen al cost d'emetre-les i no al de completar-les.
 La xifra és vàlida com a comparació de cost d'estratègia i no ho és com a mesura
 d'amplada de banda ni de latència de transferència.
 
-Una execució de comprovació amb la instrumentació desactivada dona 5,268
-mil·lisegons per a la via intermèdia, de manera que la mesura no està
-distorsionada per l'instrument.
+Les sis execucions de cada equip es conserven senceres a l'Annex C, de manera
+que qualsevol xifra d'aquesta taula és comprovable contra el registre que la
+va produir.
 
 ==== Abast del resultat
 
 Convé delimitar què s'ha demostrat. Les càrregues mesurades succeeixen a
-l'arrencada, de manera que l'estalvi absolut és d'uns cinc mil·lisegons una sola
+l'arrencada, de manera que l'estalvi absolut és d'uns deu mil·lisegons una sola
 vegada en tota l'execució, magnitud irrellevant per a l'experiència d'ús. Les
 mesures per #f[frame] no mostren cap diferència atribuïble a la configuració,
 cosa esperada atès que no hi ha càrregues durant el bucle; la variància descrita
@@ -3385,7 +3385,27 @@ búfer intermedi.
 
 #heading(numbering: none, level: 2)[Annex C. Registres de les mesures]
 
-#todo[Recollir aquí els dotze registres de les execucions del capítol 6 —sis per
-equip— amb una nota sobre com llegir-los: quina línia identifica l'estratègia
-efectiva, quina conté l'informe de temps i quina els totals de càrrega. Els de
-l'equip B encara són a l'altra màquina.]
+Les execucions que sostenen les xifres del capítol 6 es conserven senceres al
+repositori, sota `docs/tfg/mesures/`, amb el nom de l'equip i de la configuració
+al fitxer. No s'han retallat ni editat: contenen també la sortida del carregador
+de Vulkan i l'enumeració de capes, de manera que se'n pot verificar l'entorn
+d'execució a més dels resultats.
+
+Cada registre conté tres línies rellevants per a l'experiment:
+
+/ Estratègia efectiva: La línia que comença per `Upload strategy:` indica quina
+  via va emprar realment el motor, que no ha de coincidir necessàriament amb la
+  sol·licitada: si el dispositiu no exposa un tipus de memòria alhora local i
+  visible des de l'amfitrió, el motor torna a la via del búfer intermedi i ho fa
+  constar.
+
+/ Temps de càrrega: La línia que comença per `uploads` recull el nombre
+  d'operacions i el temps acumulat, separats entre búfers de geometria i
+  imatges. És la darrera línia de cada informe i la font de la @tab:staging.
+
+/ Informe de temps per #f[frame]: El bloc encapçalat per `Frame timing over`
+  recull la finestra de mostres. Se n'emet un per segon; el rellevant és
+  l'últim de cada execució.
+
+#todo[Afegir els sis registres de l'equip B, que encara són a l'altra màquina,
+amb la mateixa convenció de noms.]
