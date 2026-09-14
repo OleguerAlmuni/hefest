@@ -923,7 +923,12 @@ verificables a l'historial del repositori.
 
 / Portabilitat i conformitat: El #f[commit] `317f497` elimina els vectors de
   longitud variable del codi i resol diversos problemes que impedien l'execució
-  sobre Linux.
+  sobre Linux. Els #f[commits] `0019163` i `68fdf25` corregeixen dos defectes
+  detectats en portar el motor a l'equip amb GPU dedicada: un punter que
+  sobrevivia a l'àmbit de l'objecte apuntat durant la creació de la cadena
+  d'intercanvi, i un error en el pas de l'estat al subsistema de registre. Tots
+  dos són comportament indefinit present també a l'altre equip, on no es
+  manifestaven.
 
 / Corpus de documentació tècnica: Els 32 documents descrits a la secció anterior,
   amb la justificació i les limitacions de cada subsistema.
@@ -1042,20 +1047,19 @@ l'API només accepta aquest format intermedi @vulkanspec. La correcció de l'ús
 l'API es verifica amb les capes de validació de Khronos, habilitades únicament a
 les compilacions de depuració.
 
-Les eines de Vulkan emprades corresponen a la versió 1.4.357.
+Les eines de Vulkan difereixen entre els dos entorns: a l'equip A provenen dels
+paquets de la distribució i a l'equip B del SDK de LunarG. Aquesta diferència no
+afecta el codi generat, atès que en tots dos casos els #f[shaders] es compilen a
+SPIR-V abans de l'execució, però sí que explica que el fitxer README del
+projecte indiqui la variable `VULKAN_SDK` com a requisit mentre que a l'entorn
+Linux no calgui definir-la.
 
-#todo[Aclarir si es tracta del SDK de LunarG o dels paquets de la distribució.
-En l'entorn Linux, `glslc` reporta la versió 2026.3 (paquet 1:1.4.357.0) i la
-variable `VULKAN_SDK` no consta definida, cosa que suggereix paquets del
-sistema; el fitxer README del projecte, en canvi, la indica com a requisit.
-Convé deixar el requisit documentat de manera coherent entre la memòria i el
-README.
-
-Nota sobre les versions, que són tres i cal no barrejar-les: les eines són la
-1.4.357; l'especificació citada com a font normativa és la 1.4.361; i la versió
-d'API que reporta el dispositiu en temps d'execució depèn del controlador
-—1.4.354 a la màquina amb GPU integrada—. Aquesta última és una dada de mesura
-i el seu lloc és el capítol 6, no aquí.]
+Convé no barrejar tres versions que apareixen al llarg del document i que
+designen coses diferents: la de les eines de compilació de #f[shaders], la de
+l'especificació citada com a font normativa —la 1.4.361— i la que cada
+dispositiu reporta en temps d'execució, recollida a la @tab:maquinari. Aquesta
+darrera és una propietat del controlador i té conseqüències pràctiques que es
+discuteixen al capítol 6.
 
 === Control de versions i documentació
 
@@ -1081,22 +1085,28 @@ de les decisions del capítol 4 i és la premissa dels experiments del capítol 
     table.header([], [*Equip A --- GPU integrada*], [*Equip B --- GPU discreta*]),
     [Processador],
     [Intel Core i7-1255U (12a gen.), 10 nuclis / 12 fils],
-    [AMD Ryzen #todo[model]],
+    [AMD Ryzen 7 4800HS, 8 nuclis / 16 fils],
     [GPU],
     [Intel Iris Xe Graphics (ADL GT2), integrada],
-    [NVIDIA GeForce GTX 1650 Ti, dedicada],
+    [NVIDIA GeForce GTX 1660 Ti with Max-Q Design, dedicada],
     [Arquitectura de memòria],
-    [Unificada amb el sistema],
-    [Memòria de vídeo dedicada],
-    [Controlador],
-    [Mesa 26.2.1 (codi obert d'Intel)],
-    [#todo[Controlador i versió]],
-    [Memòria del sistema], [16 GB], [16 GB],
-    [Sistema operatiu],
-    [#todo[Distribució i nucli]],
-    [#todo[Sistema i versió]],
+    [Un únic munt; dos tipus de memòria alhora locals al dispositiu i visibles
+     des de l'amfitrió],
+    [5,83 GiB de memòria dedicada, més una finestra de 214 MiB accessible des de
+     l'amfitrió],
+    [Controlador], [Mesa 26.2.1 (codi obert d'Intel)], [NVIDIA 566.14],
+    [Versió de Vulkan del dispositiu], [1.4.354], [1.3.289],
+    [Famílies de cues],
+    [Una de sola per a gràfics i presentació],
+    [Diferenciades: gràfics 0, presentació 2],
+    [Sistema operatiu], [Arch Linux, nucli 7.2.2], [Windows 11 Pro 10.0.26200],
+    [Memòria del sistema], [15,30 GiB], [15,42 GiB],
+    [Compilador], [Clang 22.1.8], [Clang 12.0.0 (x86-64, MSVC)],
+    [Eines de Vulkan],
+    [Paquets de la distribució (`shaderc` 2026.3)],
+    [SDK de LunarG 1.4.313.1],
   ),
-  caption: [Equips emprats per al desenvolupament i les mesures.],
+  caption: [Entorns de desenvolupament i de mesura.],
 ) <tab:maquinari>
 
 La disponibilitat de dos equips amb arquitectures de memòria diferents no és
@@ -1924,9 +1934,23 @@ d'un #f[frame] diferent. El vector de tanques per imatge tanca el buit restant:
 abans de reutilitzar una imatge, el motor espera la tanca del #f[frame] que la
 va fer servir per darrera vegada.
 
-Sobre maquinari on els dos nombres coincideixen, els índexs també ho fan i
-aquesta distinció és invisible. És un cas clar d'una propietat que només es pot
-verificar provant sobre maquinari divers.
+Aquesta divergència no és hipotètica. Sobre l'equip A el sistema de presentació
+retorna quatre imatges mentre el motor manté tres #f[frames] lògics en curs;
+sobre l'equip B els dos nombres coincideixen a dos. La distinció, per tant, és
+invisible en un dels dos entorns i determinant a l'altre, la qual cosa
+il·lustra que només es pot verificar provant sobre maquinari divers.
+
+Convé assenyalar aquí una anomalia detectada en aquest mateix codi. En calcular
+el nombre d'imatges a sol·licitar, s'afegeix una unitat al mínim que la
+superfície reporta —pràctica habitual per evitar esperes— i tot seguit una
+condició la resta de nou, ja que compara el valor amb ell mateix menys u i
+resulta sempre certa. La sol·licitud acaba sent, doncs, exactament el mínim. El
+comentari que acompanya aquesta condició declara la intenció d'igualar el nombre
+d'imatges i el de #f[frames] en vol, objectiu que de tota manera no es podria
+assolir així: el nombre definitiu no el fixa la sol·licitud sinó el sistema de
+presentació, que en pot retornar més dels demanats, com efectivament fa a l'equip
+A. L'anomalia no afecta cap de les mesures del capítol 6, que no depenen del
+nombre d'imatges, i es recull com a treball pendent.
 
 === Supòsits sobre el dispositiu
 
@@ -1964,8 +1988,33 @@ enumerar-los perquè il·lustren una lliçó concreta.
   fixa, valor que una GPU integrada pot no admetre. La correcció el limita al
   màxim que el dispositiu declara.
 
-El denominador comú és que cadascun d'aquests valors estava escrit al codi en
-lloc de consultar-se al dispositiu. És, literalment, l'advertència que la
+A aquests quatre s'hi afegeixen dos casos més, detectats en portar el motor a
+l'equip amb GPU dedicada i de naturalesa lleugerament diferent: no són valors
+presuposats sinó comportament indefinit que una configuració de maquinari
+concreta posa al descobert.
+
+/ Punter a un objecte fora d'àmbit: En crear la cadena d'intercanvi, el vector
+  amb els índexs de les famílies de cues es declarava dins del bloc condicional
+  que tracta el cas de compartició entre famílies, però l'estructura de creació
+  hi continuava apuntant i només se'n llegia el contingut més avall. La condició
+  que ho activa és que les famílies de gràfics i de presentació siguin
+  diferents, cosa que succeeix a l'equip B —famílies 0 i 2— i no a l'equip A,
+  que en té una de sola. Es tracta de comportament indefinit present a totes
+  dues plataformes; simplement, una no l'exercita.
+
+/ Estat del subsistema de registre: S'hi passava l'adreça del punter en lloc del
+  punter, de manera que l'estat intern del subsistema acabava situat dins de
+  l'estructura de l'aplicació. També és latent en tots dos entorns.
+
+Convé una precisió sobre el primer cas. La fallada que va conduir-hi va deixar de
+reproduir-se en afegir traces per diagnosticar-la, cosa habitual quan es llegeix
+memòria ja alliberada, ja que desplaçar la pila canvia el contingut que s'hi
+troba. No es pot afirmar, doncs, que aquell defecte fos la causa de la fallada
+observada; sí que era l'únic comportament indefinit del camí afectat i que la
+condició que l'activa coincideix amb la diferència entre els dos equips.
+
+El denominador comú dels quatre primers és que cadascun d'aquests valors estava
+escrit al codi en lloc de consultar-se al dispositiu. És, literalment, l'advertència que la
 documentació de Mantle ja feia el 2015 i que es va citar al capítol 2: no
 presuposar les propietats del sistema, sinó consultar les que aquest reporta
 @riguer2015. Trobar-los va exigir entendre què garanteix l'API i què deixa a
@@ -2255,10 +2304,10 @@ mitjançant variables d'entorn, de manera que totes les mesures provenen del
 mateix binari compilat una sola vegada. Això elimina qualsevol diferència
 atribuïble a la compilació.
 
-Cada configuració s'executa tres vegades. Les execucions duren uns set segons,
-prou perquè la finestra de mostres s'ompli diverses vegades i perquè les
-operacions d'arrencada s'hagin completat. L'entorn de mesura és l'equip A de la
-@tab:maquinari.
+Cada configuració s'executa tres vegades sobre cadascun dels dos equips de la
+@tab:maquinari. Les execucions duren uns set segons, prou perquè la finestra de
+mostres s'ompli diverses vegades i perquè les operacions d'arrencada s'hagin
+completat.
 
 === Limitacions de l'instrument
 
@@ -2326,10 +2375,20 @@ documenta el capítol 3. El canvi va requerir escriure la implementació de la
 capa i resoldre incompatibilitats de compilació, però no modificar la lògica
 dels subsistemes superiors.
 
-#todo[Verificar que la branca actual continua compilant i executant-se sobre
-Windows. Les darreres ampliacions s'han desenvolupat íntegrament sobre Linux i
-el camí de Windows no s'ha exercitat des d'aleshores. Si hi ha regressions, cal
-corregir-les o bé matisar aquest objectiu.]
+Aquesta independència s'ha tornat a verificar en portar a Windows les
+ampliacions desenvolupades sobre Linux. El codi compila sense cap modificació
+específica de plataforma, i els tres riscos que s'havien anticipat —el canvi al
+format de vèrtex, l'ús d'una funció de la biblioteca estàndard per llegir
+variables d'entorn i els subsistemes de nova incorporació— no van arribar a
+materialitzar-se.
+
+L'execució, en canvi, va requerir corregir dos defectes que el capítol 5
+documenta. Convé destacar-ne la naturalesa: cap dels dos és específic de
+Windows. Tots dos són comportament indefinit present també a l'entorn Linux,
+on no es manifesta perquè el maquinari no exercita la condició que els activa.
+El port, doncs, no va exposar una mancança de la capa de plataforma sinó dos
+defectes latents del motor, la qual cosa reforça l'argument d'aquest objectiu en
+lloc de matisar-lo.
 
 === Renderitzador
 
@@ -2339,13 +2398,36 @@ difusa i especular amb una llum direccional, i els dibuixa amb una càmera que
 l'usuari pot desplaçar i orientar. Disposa de dues passades de renderitzat, una
 per al món i una per a la interfície d'usuari.
 
-#todo[Inserir aquí les captures del motor en funcionament. Calen, com a mínim:
-+ Vista general amb el cub texturat i il·luminat, en una orientació que mostri
-  dues o tres cares alhora perquè el degradat de la il·luminació sigui visible.
-+ Detall del reflex especular.
-+ La mateixa escena amb l'element d'interfície, per evidenciar les dues
-  passades.
-Cada captura necessita peu i referència creuada des d'aquest text.]
+La @fig:cub mostra el motor en execució i permet comprovar-ho.
+
+#figure(
+  image("figures/cub_illuminat.png", width: 78%),
+  caption: [El motor en execució. El cub el genera el sistema de geometria amb
+    una normal per cara; la textura i el color difús provenen d'un fitxer de
+    material carregat des de disc. Les tres cares visibles reben il·luminacions
+    diferents segons l'angle que formen amb la llum direccional: la dreta hi
+    està encarada, la superior hi queda obliqua i l'esquerra n'està girada i
+    només rep el terme ambient. El quadrilàter del cantó superior esquerre es
+    dibuixa a la passada d'interfície, amb un material i una projecció
+    diferents dels del món.],
+) <fig:cub>
+
+Aquesta única imatge evidencia la major part de l'objectiu: la geometria prové
+del generador descrit a §5.4, la textura i el color del material provenen d'un
+fitxer de configuració llegit des de disc, la variació de lluminositat entre
+cares demostra que el terme difús opera sobre les normals per cara, i la
+presència simultània del cub i de l'element d'interfície evidencia les dues
+passades de renderitzat. El desplaçament i l'orientació de la càmera no es poden
+mostrar en una imatge fixa, però són el mecanisme amb què es va obtenir aquest
+enquadrament.
+
+El terme especular, en canvi, no s'il·lustra per separat, i convé explicar per
+què. En una superfície plana la normal és constant, de manera que el factor
+especular ho és també i el terme es reparteix de manera uniforme per cara en
+lloc de concentrar-se en un reflex localitzat. Il·lustrar-lo exigiria geometria
+corba o variació de normal per píxel, cap de les quals forma part de l'abast
+d'aquest treball. El terme hi contribueix —forma part del càlcul descrit a
+§5.2— però la geometria disponible no permet aïllar-lo visualment.
 
 === Model de gestió de memòria
 
@@ -2423,14 +2505,32 @@ sobrecost prescindible.
 
 ==== Fonament
 
-Abans de mesurar res cal comprovar si el supòsit es compleix al
-maquinari emprat. El dispositiu de l'equip A exposa un únic munt d'11,48 GiB
-marcat com a local al dispositiu, i set tipus de memòria dels quals dos són
-alhora locals al dispositiu i visibles des de l'amfitrió. Es tracta,
-literalment, del cas que l'especificació preveu quan adverteix que en algunes
-arquitectures pot haver-hi un sol munt utilitzable per a qualsevol propòsit
-@vulkanspec. La còpia intermèdia, en aquest maquinari, copia memòria cap a una
-regió de la mateixa naturalesa.
+Abans de mesurar res cal comprovar si el supòsit es compleix a cada maquinari, i
+el resultat d'aquesta comprovació és ja el primer resultat de l'experiment.
+
+El dispositiu de l'equip A exposa un únic munt d'11,48 GiB marcat com a local al
+dispositiu, i set tipus de memòria dels quals dos són alhora locals al
+dispositiu i visibles des de l'amfitrió. Es tracta, literalment, del cas que
+l'especificació preveu quan adverteix que en algunes arquitectures pot haver-hi
+un sol munt utilitzable per a qualsevol propòsit @vulkanspec. La còpia
+intermèdia, en aquest maquinari, copia memòria cap a una regió de la mateixa
+naturalesa.
+
+L'equip B, amb GPU dedicada, contradiu la previsió de partida. Exposa tres
+munts: un de 5,83 GiB local al dispositiu, un de 7,71 GiB sense banderes, i un
+tercer de només 214 MiB que és alhora local al dispositiu i accessible des de
+l'amfitrió. Aquest tercer munt correspon a la finestra que el dispositiu mapa a
+l'espai d'adreces del processador, i fa que també en una arquitectura de memòria
+separada existeixi un tipus de memòria que satisfà les condicions de
+l'escriptura directa: el tipus 5, únic dels sis que reuneix les tres propietats
+requerides.
+
+La conseqüència és que la disponibilitat d'escriptura directa no distingeix les
+dues arquitectures, com s'havia previst. El que les distingeix és la capacitat,
+il·limitada en la pràctica a l'equip A i acotada a 214 MiB a l'equip B. Els
+búfers de geometria del motor en sumen 36, de manera que hi caben, però el marge
+no és ampli: afegir tangents al format de vèrtex portaria el búfer de vèrtexs
+sol a 48 MiB.
 
 ==== Muntatge
 
@@ -2450,8 +2550,9 @@ l'estratègia.
 
 ==== Resultats
 
-Cada execució efectua vuit càrregues de búfer i tres de textura.
-La @tab:staging recull les tres repeticions de cada configuració.
+Cada execució efectua vuit càrregues de búfer i tres de textura. La
+@tab:staging recull les tres repeticions de cada configuració sobre cadascun
+dels dos equips.
 
 #figure(
   table(
@@ -2460,86 +2561,137 @@ La @tab:staging recull les tres repeticions de cada configuració.
     align: (left, right, right, right, right, right),
     stroke: 0.4pt + rgb("#ccc"),
     table.header(
-      [*Estratègia*], [*Rep. 1*], [*Rep. 2*], [*Rep. 3*], [*Mitjana*], [*Interval*]),
-    table.cell(colspan: 6)[_Càrrega de búfers de geometria (8 operacions)_],
-    [Búfer intermedi], [7,024], [2,057], [6,678], [*5,253*], [2,06 -- 7,02],
-    [Escriptura directa], [0,079], [0,067], [0,064], [*0,070*], [0,064 -- 0,079],
-    table.cell(colspan: 6)[_Càrrega de textures (3 operacions) --- control_],
-    [Amb intermedi], [13,432], [10,720], [12,419], [*12,190*], [10,72 -- 13,43],
-    [Amb directa], [13,084], [12,631], [11,882], [*12,532*], [11,88 -- 13,08],
+      [*Estratègia*], [*Rep. 1*], [*Rep. 2*], [*Rep. 3*], [*Mitjana*], [*Factor*]),
+    table.cell(colspan: 6)[_Equip A --- càrrega de búfers de geometria_],
+    [Búfer intermedi], [7,024], [2,057], [6,678], [*5,253*], [],
+    [Escriptura directa], [0,079], [0,067], [0,064], [*0,070*], [*75×*],
+    table.cell(colspan: 6)[_Equip B --- càrrega de búfers de geometria_],
+    [Búfer intermedi], [5,524], [6,404], [5,554], [*5,827*], [],
+    [Escriptura directa], [0,021], [0,022], [0,019], [*0,021*], [*282×*],
+    table.cell(colspan: 6)[_Equip A --- càrrega de textures (control)_],
+    [Amb intermedi], [13,432], [10,720], [12,419], [*12,190*], [],
+    [Amb directa], [13,084], [12,631], [11,882], [*12,532*], [],
+    table.cell(colspan: 6)[_Equip B --- càrrega de textures (control)_],
+    [Amb intermedi], [5,053], [5,502], [5,113], [*5,223*], [],
+    [Amb directa], [4,827], [5,486], [5,599], [*5,304*], [],
   ),
   caption: [Temps de càrrega de recursos, en mil·lisegons, segons l'estratègia
-    de transferència.],
+    de transferència i l'equip.],
 ) <tab:staging>
+
+En cap dels dos equips el motor no va haver de recórrer al búfer intermedi: tots
+dos disposen del tipus de memòria requerit, i en el cas de l'equip B es va
+verificar que el búfer de geometria hi acaba efectivament assignat —el filtre de
+tipus admissibles que retorna el dispositiu deixa el tipus 5 com a únic candidat
+que satisfà les tres propietats.
 
 ==== Lectura
 
-L'escriptura directa redueix el temps de càrrega de geometria de
-5,25 a 0,07 mil·lisegons, un factor aproximat de setanta-cinc. El control es
-manté pràcticament invariable —12,19 enfront de 12,53 mil·lisegons, una
-diferència del tres per cent, inferior a la dispersió del mateix control—, cosa
-que permet atribuir la millora a l'estratègia i no a la variabilitat entre
-execucions.
+L'escriptura directa redueix el temps de càrrega de geometria en tots dos
+entorns: un factor de setanta-cinc a l'equip A i de dos-cents vuitanta-dos a
+l'equip B. El control es manté estable en tots dos casos —una diferència del
+tres i de l'u i mig per cent respectivament, inferior a la dispersió del mateix
+control—, cosa que permet atribuir la millora a l'estratègia i no a la
+variabilitat entre execucions.
 
-La dispersió mereix una observació pròpia. La via amb búfer intermedi oscil·la
-entre 2,06 i 7,02 mil·lisegons, un factor de 3,4 entre el mínim i el màxim,
-mentre que la directa es manté entre 0,064 i 0,079, un marge del vint-i-tres per
-cent. La via directa no és només més ràpida sinó notablement més predictible,
-cosa coherent amb el fet que elimina una reserva de memòria, una ordre de còpia
-i una espera de cua, tres operacions el cost de les quals depèn de l'estat del
-sistema.
+La dispersió mereix una observació. A l'equip A la via amb búfer intermedi
+oscil·la entre 2,06 i 7,02 mil·lisegons, un factor de 3,4 entre el mínim i el
+màxim; l'escriptura directa es manté dins d'un marge del vint-i-tres per cent.
+A l'equip B la diferència de predictibilitat és menys marcada però va en el
+mateix sentit. La via directa no és només més ràpida sinó més estable, cosa
+coherent amb el fet que elimina una reserva de memòria, una ordre de còpia i una
+espera de cua, tres operacions el cost de les quals depèn de l'estat del sistema.
+
+==== Què mesuren aquestes xifres
+
+Les dues branques comparades no executen la mateixa feina, i convé ser explícit
+sobre què significa la diferència abans d'interpretar-la.
+
+La via del búfer intermedi reserva memòria, hi copia les dades, enregistra i
+envia una ordre de còpia i n'espera la finalització. La via directa es redueix a
+una còpia de memòria. El que la taula compara és, per tant, el cost que cada
+estratègia imposa a l'amfitrió, no el temps que les dades triguen a ser
+utilitzables pel dispositiu.
+
+Aquesta distinció és especialment rellevant a l'equip B. Les escriptures a la
+finestra accessible des de l'amfitrió es publiquen sobre el bus del dispositiu
+sense que el processador n'esperi la finalització, de manera que els vint-i-un
+microsegons mesurats corresponen al cost d'emetre-les i no al de completar-les.
+La xifra és vàlida com a comparació de cost d'estratègia i no ho és com a mesura
+d'amplada de banda ni de latència de transferència.
+
+Una execució de comprovació amb la instrumentació desactivada dona 5,268
+mil·lisegons per a la via intermèdia, de manera que la mesura no està
+distorsionada per l'instrument.
 
 ==== Abast del resultat
 
-Convé delimitar què s'ha demostrat. Les càrregues mesurades
-succeeixen a l'arrencada, de manera que l'estalvi absolut és de cinc
-mil·lisegons una sola vegada en tota l'execució, magnitud irrellevant per a
-l'experiència d'ús. Les mesures per #f[frame] no mostren cap diferència
-atribuïble a la configuració, cosa esperada atès que no hi ha càrregues durant
-el bucle; la variància entre execucions descrita a la secció de metodologia és,
-a més, prou gran com perquè aquestes mesures no permetessin distingir-les
-encara que n'hi hagués.
+Convé delimitar què s'ha demostrat. Les càrregues mesurades succeeixen a
+l'arrencada, de manera que l'estalvi absolut és d'uns cinc mil·lisegons una sola
+vegada en tota l'execució, magnitud irrellevant per a l'experiència d'ús. Les
+mesures per #f[frame] no mostren cap diferència atribuïble a la configuració,
+cosa esperada atès que no hi ha càrregues durant el bucle; la variància descrita
+a la secció de metodologia és, a més, prou gran com perquè aquestes mesures no
+permetessin distingir-les encara que n'hi hagués.
 
-El valor del resultat no és, doncs, l'estalvi de temps sinó el que revela sobre
-el supòsit de partida: un patró que la bibliografia presenta com la manera
-correcta de transferir dades a la GPU resulta prescindible en una classe de
-maquinari molt estesa, i el motor ho pot determinar consultant el dispositiu en
-lloc de presuposar-ho.
-
-#todo[Aquest experiment està incomplet fins que s'executi sobre l'equip B, amb
-GPU dedicada. Allà s'espera que no existeixi cap tipus de memòria local al
-dispositiu i visible des de l'amfitrió, que el motor retorni automàticament a la
-via del búfer intermedi i que les dues configuracions donin el mateix resultat.
-Aquesta segona meitat és la que converteix l'experiment en una comparació entre
-arquitectures de memòria en lloc de la caracterització d'una sola.]
-
-#todo[Experiments restants per executar, per ordre de valor:
-+ `max_frames_in_flight` a 1, 2 i 3.
-+ Modes de presentació MAILBOX i FIFO.
-+ Reescriptura de descriptors cada #f[frame] enfront de reescriptura gated per
-  `generation`.
-
-Abans d'executar-los cal resoldre la variància de les mesures per #f[frame]
-descrita a §6.1, ja que tots tres s'hi basen: caldrà descartar un període
-d'escalfament i allargar les execucions.]
+El valor del resultat no és, doncs, l'estalvi de temps, sinó el que estableix
+sobre la decisió de partida. Es tracta amb detall a la secció següent.
 
 == Discussió
 
-=== Un consell general que no s'aplica universalment
+=== La condició no és la que sembla
 
-El resultat principal d'aquest capítol no és que una via de transferència sigui
-setanta-cinc vegades més ràpida que una altra. És que el patró que la
-bibliografia presenta com la manera correcta de portar dades a la memòria del
-dispositiu resulta prescindible sobre una classe de maquinari molt estesa, i que
-el motor pot determinar-ho consultant el dispositiu en lloc de decidir-ho per
-endavant.
+La previsió de partida d'aquest experiment era que l'escriptura directa seria
+possible sobre l'equip de memòria unificada i impossible sobre el de memòria
+dedicada, i que la comparació entre tots dos establiria que la necessitat del
+búfer intermedi és una propietat del maquinari. La previsió era equivocada, i
+la manera com ho és resulta més instructiva que si s'hagués complert.
 
-El patró del búfer intermedi no és incorrecte: resol un problema real quan la
-memòria local al dispositiu no és accessible des de l'amfitrió, cosa que és certa
-en qualsevol GPU dedicada. El que la mesura mostra és que la seva necessitat és
-una propietat del maquinari i no del disseny, i que aplicar-lo incondicionalment
-—com feia el motor abans d'aquest treball, i com el descriuen la major part dels
-materials didàctics— significa pagar-ne el cost també quan no cal.
+Tots dos equips exposen memòria alhora local al dispositiu i visible des de
+l'amfitrió. La diferència no és la disponibilitat sinó la naturalesa i la
+capacitat: a l'equip A perquè tota la memòria ho és, en tractar-se d'una
+arquitectura unificada; a l'equip B perquè el dispositiu mapa una finestra de
+214 MiB de la seva memòria dedicada a l'espai d'adreces del processador.
+
+La conseqüència pràctica és que la comprovació que el motor efectua —si existeix
+un tipus de memòria amb les tres propietats requerides— resulta insuficient com a
+criteri de decisió. És condició necessària però no suficient: no distingeix una
+arquitectura on tota la memòria és accessible d'una on només ho és una finestra
+reduïda, ni informa del cost relatiu d'escriure-hi enfront de transferir-hi
+mitjançant el motor de còpia del dispositiu.
+
+=== Què queda establert i què no
+
+Les mesures estableixen que el cost que la via del búfer intermedi imposa a
+l'amfitrió és substancial i evitable quan existeix el tipus de memòria adequat, i
+que aquest cost és a més poc predictible. Això val per a totes dues
+arquitectures.
+
+No estableixen, en canvi, que l'escriptura directa sigui preferible en general.
+Com s'ha exposat a la secció anterior, les dues branques no mesuren la mateixa
+feina i les escriptures a la finestra de l'equip B es publiquen sense esperar-ne
+la finalització. Per a volums de dades més grans, o quan interessi el moment en
+què les dades són efectivament utilitzables pel dispositiu i no el cost d'emetre
+l'escriptura, la comparació podria invertir-se: el motor de còpia del dispositiu
+està dissenyat per moure dades de manera més eficient que una successió
+d'escriptures del processador sobre el bus.
+
+L'afirmació que el treball sosté és, per tant, més acotada que la que es
+pretenia demostrar i, alhora, més aplicable: el patró del búfer intermedi no és
+incondicionalment necessari, la condició que en determina la necessitat és
+consultable al dispositiu, i la consulta que cal fer és més fina que la simple
+existència d'un tipus de memòria.
+
+=== L'exemple de la finestra acotada
+
+L'equip B il·lustra per què aquesta finor importa. La finestra accessible des de
+l'amfitrió és de 214 MiB i els búfers de geometria del motor n'ocupen 36. La
+via directa hi funciona avui, però el marge és limitat: ampliar el format de
+vèrtex amb tangents portaria el búfer de vèrtexs sol a 48 MiB, i qualsevol
+escena amb geometria abundant esgotaria el munt. Un motor que decidís
+l'estratègia únicament a partir de l'existència del tipus de memòria acabaria
+fallant sobre aquest maquinari en créixer l'escena, sense que res en el criteri
+emprat n'hagués advertit.
 
 === La coherència amb el marc del capítol 2
 
@@ -2554,14 +2706,16 @@ visibilitat de la memòria sinó consultar les propietats que el sistema reporta
 el cas d'una arquitectura amb un únic munt utilitzable per a qualsevol propòsit
 @vulkanspec.
 
-El capítol 5 documentava quatre supòsits que el motor feia sobre el dispositiu i
-que no es complien sobre el maquinari d'aquest treball. Aquest capítol n'afegeix
-un cinquè, amb la diferència que aquest no produïa cap fallada visible: el motor
-funcionava correctament copiant memòria cap a una regió de la mateixa
-naturalesa, simplement hi dedicava temps innecessari.
+El capítol 5 documenta sis defectes del motor que només es manifesten sobre
+maquinari diferent del de desenvolupament: quatre supòsits sobre propietats del
+dispositiu escrites al codi en lloc de consultades, i dos casos de comportament
+indefinit que una configuració concreta de famílies de cues posa al descobert.
+Aquest capítol n'afegeix un setè, de naturalesa diferent dels anteriors: el motor
+no fallava en cap dels dos equips, simplement hi dedicava temps innecessari.
 
-És, per tant, el cas més interessant dels cinc. Els quatre anteriors es van
-detectar perquè el motor no arrencava; aquest només es podia detectar mesurant.
+És, per tant, el cas més interessant de tots. Els sis anteriors es van detectar
+perquè el motor no arrencava o es tancava de manera anòmala; aquest només es
+podia detectar mesurant.
 
 === L'asimetria entre amfitrió i dispositiu
 
@@ -2596,16 +2750,18 @@ que aquest treball no arriba a plantejar.
 L'avaluació presentada té un abast limitat i convé enunciar-lo amb precisió, ja
 que condiciona quines conclusions se'n poden extreure.
 
-/ Un sol equip: Totes les mesures provenen de l'equip A de la
-  @tab:maquinari. L'experiment està dissenyat per contrastar dues arquitectures
-  de memòria, però només se n'ha caracteritzat una. Fins que no s'executi sobre
-  l'equip B, el comportament esperat sobre GPU dedicada és una predicció i no un
-  resultat.
+/ Dos equips, dos controladors: Les mesures provenen de dues màquines, cosa que
+  permet contrastar arquitectures de memòria però no generalitzar. El repartiment
+  de tipus de memòria, la mida de la finestra accessible des de l'amfitrió i el
+  cost de les operacions de còpia són decisions d'implementació que poden variar
+  entre controladors, entre versions del mateix controlador i entre models de la
+  mateixa família.
 
-/ Un sol controlador: Les xifres corresponen a una versió concreta d'un
-  controlador de codi obert. El repartiment de tipus de memòria i el cost de les
-  operacions de còpia són decisions d'implementació que poden variar entre
-  controladors del mateix fabricant.
+/ Cost d'estratègia, no amplada de banda: Com s'ha exposat, les dues branques
+  comparades no executen la mateixa feina i les escriptures a la finestra de
+  l'equip B no s'esperen. Les xifres no permeten afirmar res sobre el temps que
+  les dades triguen a ser utilitzables pel dispositiu, que és la magnitud
+  rellevant per a transferències grans.
 
 / Escena mínima: La càrrega gràfica consisteix en un cub texturat i un
   quadrilàter d'interfície. No és representativa de cap càrrega real, i les
