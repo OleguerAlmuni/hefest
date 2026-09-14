@@ -66,44 +66,36 @@
 // Marca visual per a text pendent d'escriure. Esborrar abans d'entregar.
 #let todo(x) = text(fill: rgb("#b03030"))[#emph[[#x]]]
 
-// Dades de portada. Es declaren aquí perquè apareixen en més d'un lloc.
-#let nom-autor = [Oleguer Almuni#todo[Nom complet amb els dos cognoms.]]
-#let nom-director = todo[Nom del director o ponent.]
-#let convocatoria = todo[Convocatòria i data de lliurament.]
+// Dades de portada. La disposició reprodueix la plantilla oficial de l'escola.
+#let nom-autor = [Oleguer Almuni i Orra]
+#let nom-ponent = [Ferran Ruiz Sala]
+#let titol = [Desenvolupament d'un motor de jocs en C \ emprant Vulkan com a API de gràfics]
 
 // =============================================================================
 #set page(numbering: none)
 
 #align(center)[
-  #v(1.5cm)
-  #text(size: 13pt)[LA SALLE CAMPUS BARCELONA]\
-  #text(size: 13pt)[UNIVERSITAT RAMON LLULL]
-  #v(0.4cm)
-  #todo[Logotip de l'escola, si la plantilla el requereix.]
-  #v(2.2cm)
-  #text(size: 14pt)[TREBALL DE FINAL DE GRAU]
-  #v(0.3cm)
-  #text(size: 13pt)[Grau en Enginyeria Multimèdia]
+  #v(0.6cm)
+  #image("figures/logo_lasalle.png", width: 6.2cm)
   #v(1.6cm)
-  #line(length: 60%, stroke: 0.6pt)
-  #v(0.8cm)
-  #text(size: 21pt, weight: "bold")[
-    Desenvolupament d'un motor de jocs\ en C emprant Vulkan com a API de gràfics
-  ]
-  #v(0.8cm)
-  #line(length: 60%, stroke: 0.6pt)
+  #text(size: 14pt)[Escola Tècnica Superior d'Enginyeria La Salle]
+  #v(1.4cm)
+  #text(size: 14pt)[Treball Final de Grau]
+  #v(1.4cm)
+  #text(size: 14pt)[Grau en Enginyeria Multimèdia]
+  #v(2.6cm)
+  #text(size: 19pt, weight: "bold")[#titol]
   #v(1fr)
-  #grid(
-    columns: (auto, auto),
-    column-gutter: 1.2em,
-    row-gutter: 0.7em,
-    align: (right, left),
-    [Autor:], [#nom-autor],
-    [Director:], [#nom-director],
-    [Convocatòria:], [#convocatoria],
-  )
-  #v(2cm)
 ]
+
+#grid(
+  columns: (1fr, 1fr),
+  row-gutter: 0.8em,
+  align: left,
+  [Alumne], [Professor Ponent],
+  [#nom-autor], [#nom-ponent],
+)
+#v(1.2cm)
 
 #pagebreak()
 
