@@ -70,17 +70,41 @@
 // -----------------------------------------------------------------------------
 #heading(numbering: none, outlined: false)[Resum]
 
-#todo[Màxim una pàgina. Ha de contenir, en aquest ordre (ho exigeix la
-plantilla):
-+ Plantejament del problema o de la necessitat a cobrir.
-+ Objectiu del treball.
-+ Resultats obtinguts que responen a aquest problema.
-+ Conclusions obtingudes.
+El desenvolupament de videojocs es fa avui majoritàriament sobre motors
+comercials, que es prenen com una eina donada. Aquesta és també la via per la
+qual s'hi accedeix durant la formació, de manera que el funcionament intern del
+motor —com arriben les dades a la memòria del dispositiu gràfic, com se
+sincronitzen el processador i la GPU, o per què el bucle principal té les fases
+que té— queda fora de l'abast del que s'estudia.
 
-Escriure'l l'últim, quan els resultats ja existeixin. És el primer que llegeix
-el tribunal i sovint l'únic que llegeixen sencer abans de la defensa.]
+L'objectiu d'aquest treball és dissenyar, implementar i avaluar un motor de jocs
+escrit en C amb un renderitzador basat en Vulkan, documentant cada decisió
+estructural contra les fonts primàries que la fonamenten: la bibliografia
+d'arquitectura de motors i l'especificació de l'API gràfica.
 
-#pagebreak()
+El resultat és un motor funcional sobre Windows i Linux, amb una capa
+d'abstracció de plataforma, un model de gestió de memòria en què la ubicació i
+el cicle de vida de l'estat de cada subsistema són decisions del motor, un
+renderitzador que carrega geometria, textures i materials des de disc i els
+il·lumina, i una capa d'instrumentació pròpia que mesura el cost de cada fase
+del #f[frame] tant al processador com al dispositiu. Durant el
+desenvolupament es van detectar i corregir quatre supòsits sobre el maquinari
+que impedien executar el motor sobre GPU integrades. L'avaluació empírica mostra,
+a més, que el patró de transferència de dades que la bibliografia presenta com a
+correcte resulta prescindible sobre arquitectures de memòria unificada, on
+evitar-lo redueix el temps de càrrega de geometria en un factor aproximat de
+setanta-cinc.
+
+Les conclusions principals són dues. La primera és que la forma d'un motor
+modern està determinada en bona mesura per l'API sobre la qual es construeix:
+els subsistemes que el treball ha necessitat són exactament els que les fonts
+prediuen a partir de com l'API reparteix responsabilitats. La segona és que
+seguir una implementació de referència i estudiar les fonts primàries donen
+resultats diferents; el treball documenta dos casos en què l'estudi de les fonts
+va modificar conclusions que s'haurien mantingut altrament.
+
+#todo[Verificar si la normativa exigeix el resum també en castellà i en anglès.
+Si és així, traduir-lo un cop el text català estigui tancat.]
 
 #heading(numbering: none, outlined: false)[Agraïments]
 #todo[Opcional segons la plantilla.]
@@ -97,19 +121,21 @@ el tribunal i sovint l'únic que llegeixen sencer abans de la defensa.]
 // -----------------------------------------------------------------------------
 #heading(numbering: none)[Acrònims]
 
-#todo[Capítol obligatori. Ordre alfabètic. Els acrònims que provenen de
-paraules en una altra llengua van en cursiva. Un cop desplegats aquí, ja no es
-tornen a desplegar en tot el document.]
+Els acrònims que provenen de paraules en una llengua diferent a la del document
+s'hi desplegen en cursiva. Un cop desplegats aquí, no es tornen a desplegar al
+llarg del text.
 
 / API: #f[Application Programming Interface]
-/ DOD: #f[Data-Oriented Design]
-/ FPS: #f[Frames Per Second]
+/ AZDO: #f[Approaching Zero Driver Overhead]
+/ CPU: #f[Central Processing Unit]
+/ ECTS: #f[European Credit Transfer and Accumulation System]
+/ GLSL: #f[OpenGL Shading Language]
 / GPU: #f[Graphics Processing Unit]
-/ SPIR-V: #f[Standard Portable Intermediate Representation — Vulkan]
+/ SDK: #f[Software Development Kit]
+/ SPIR-V: #f[Standard Portable Intermediate Representation]
 / TFG: Treball de Final de Grau
-/ UBO: #f[Uniform Buffer Object]
-/ UMA: #f[Unified Memory Architecture]
-/ WSI: #f[Window System Integration]
+/ X11: #f[X Window System], versió 11
+/ XCB: #f[X protocol C-language Binding]
 
 #set page(numbering: "1")
 #counter(page).update(1)
@@ -122,10 +148,104 @@ tornen a desplegar en tot el document.]
 
 == Context i motivació
 
-#todo[Per què un motor de jocs propi, i per què ara. Enllaçar amb la formació
-del grau: quins conceptes s'hi han tocat i a quin nivell. Aquí es justifica que
-el projecte és una *aprofundiment* en un tema del grau, que és literalment el
-que demana RA1.]
+=== El motor com a caixa negra
+
+El desenvolupament de videojocs es fa avui, de manera aclaparadorament
+majoritària, sobre motors comercials. Aquesta és també la via per la qual s'hi
+accedeix durant la formació: el motor es pren com una eina donada, es programa
+al damunt i s'obtenen resultats sense necessitat de saber què hi passa a sota.
+
+Aquesta manera de treballar és perfectament raonable —és, de fet, la decisió
+correcta per a gairebé qualsevol projecte que vulgui produir un joc— però deixa
+una part considerable del domini sense explorar. Qui hi treballa sap què fa el
+motor, però no com ho fa: com arriben les dades d'un actiu des del disc fins a
+la memòria de la targeta gràfica, com se sincronitzen el processador i el
+dispositiu, per què el bucle principal té les fases que té, o què determina
+l'ordre en què els seus subsistemes s'han d'arrencar.
+
+La motivació d'aquest treball neix precisament d'aquesta distància: de
+l'interès per entendre com funciona un joc a la base, per sota de l'eina.
+
+=== L'instrument i l'obra
+
+Hi ha, a més, una consideració sobre el mitjà que va més enllà del pragmatisme i
+que convé explicitar, tot i tractar-se d'una valoració i no d'un fet.
+
+En gairebé cap altra disciplina creativa la persona que concep i desenvolupa
+l'obra està capacitada per construir també l'instrument amb què la fa. El músic
+toca la guitarra però rarament la fabrica; el cineasta grava amb la càmera però
+no la dissenya. Construir l'instrument i fer-ne obra són oficis diferents, amb
+formacions diferents, i la separació és tan natural que amb prou feines es
+percep com a tal.
+
+El videojoc constitueix una excepció poc habitual. Com que l'instrument és
+programari i una part considerable de qui crea videojocs ja programa, la frontera
+entre construir l'eina i emprar-la és molt més permeable que en qualsevol dels
+casos anteriors. La possibilitat existeix i, tanmateix, la indústria opta de
+manera aclaparadora per no exercir-la.
+
+Aquesta elecció té raons sòlides, ja apuntades: per a la majoria de projectes,
+i molt especialment per a equips reduïts, construir un motor propi és una
+inversió que no es recupera. Però que la decisió sigui raonable no la fa
+inevitable. Un equip que disposa del seu propi motor pot adaptar l'eina a
+l'obra en lloc d'adaptar l'obra a l'eina, i és raonable pensar que això té
+efectes sobre el resultat quan el projecte té ambicions que l'eina genèrica no
+contempla.
+
+Aquest treball no pretén demostrar aquesta tesi, que excediria de molt el seu
+abast. L'esmenta perquè forma part de la motivació: entendre com es construeix
+un motor és el requisit previ de qualsevol decisió sobre si val la pena
+construir-ne un.
+
+=== Relació amb la formació del grau
+
+El grau en Enginyeria Multimèdia proporciona els fonaments sobre els quals
+aquest treball es construeix. S'hi han tractat models d'il·luminació, s'han
+implementat mecàniques de joc i s'ha treballat amb motors, tant comercials com
+de complexitat reduïda, i s'hi han adquirit els coneixements de programació,
+matemàtiques i representació gràfica que el projecte requereix.
+
+El que la formació no aborda —i difícilment podria abordar, per l'extensió que
+implica— és la construcció del motor mateix. Els models d'il·luminació s'han
+estudiat i aplicat, però sobre un renderitzador ja existent; les mecàniques de
+joc s'han implementat, però sobre un bucle principal proporcionat per l'eina. El
+salt entre fer servir aquests sistemes i construir-los és considerable, i és
+exactament el que aquest treball es proposa.
+
+En aquest sentit, el projecte no introdueix una àrea aliena al grau sinó que
+aprofundeix en una de les seves: pren conceptes que s'hi han tractat en la seva
+vessant d'ús i els reconstrueix des dels seus fonaments, la qual cosa n'obliga a
+entendre les decisions que normalment queden ocultes rere l'eina.
+
+=== El repte tècnic
+
+A la motivació anterior s'hi afegeix l'atractiu del problema en si mateix. Un
+motor gràfic és una aplicació complexa: exigeix gestionar memòria de manera
+explícita, coordinar dos processadors que treballen de manera asíncrona,
+dissenyar abstraccions que sobrevisquin al creixement del sistema i mantenir un
+pressupost de temps estricte a cada #f[frame]. Poques aplicacions reuneixen
+aquesta combinació d'exigències.
+
+L'elecció de Vulkan accentua aquest caràcter. Com s'argumenta al capítol 2, es
+tracta d'una API que trasllada deliberadament a l'aplicació responsabilitats que
+les generacions anteriors resolien de manera transparent. Això n'incrementa
+notablement la dificultat, però és també el que la converteix en un objecte
+d'estudi adequat: allò que altres API amaguen, aquesta obliga a decidir-ho
+explícitament, i cada decisió explícita és una decisió que es pot documentar i
+justificar.
+
+=== Orientació professional
+
+Finalment, el projecte respon a un objectiu professional. La indústria del
+videojoc és l'àmbit en què es pretén desenvolupar la trajectòria posterior al
+grau, i el coneixement del funcionament intern d'un motor hi té valor encara que
+la feina es faci sobre eines comercials: permet entendre per què aquestes eines
+són com són, on són els seus límits i què costa realment cada operació.
+
+Un projecte d'aquestes característiques complementa, per tant, la resta de
+coneixements adquirits durant la formació, i aporta al perfil una dimensió
+—programació de sistemes i de gràfics a baix nivell— que el treball sobre motors
+comercials no desenvolupa per si mateix.
 
 == Objectius
 
@@ -153,10 +273,8 @@ dels quals té una resposta explícita al capítol de resultats:
 + Avaluar empíricament un conjunt de decisions del renderitzador i quantificar
   l'impacte de cadascuna.
 
-#todo[Revisar aquesta llista quan el capítol 5 estigui tancat. Cada objectiu ha
-de tenir una secció al capítol 6 que hi respongui de manera comprovable; si
-algun no s'ha assolit, és preferible reformular-lo aquí que deixar-lo sense
-resposta. El rúbric puntua directament que els objectius estiguin ben delimitats.]
+Cadascun d'aquests objectius té una resposta explícita i comprovable a la secció
+corresponent del capítol 6.
 
 == Abast
 
@@ -194,7 +312,53 @@ funcional amb un producte comercial.
 
 == Organització del document
 
-#todo[Un paràgraf per capítol. Ho exigeix la plantilla.]
+El document segueix l'ordre en què es va desenvolupar el treball: primer el marc
+que el fonamenta, després el mètode, les decisions, la implementació i
+finalment l'avaluació.
+
+El *capítol 2* estableix el marc conceptual. Presenta l'estructura en capes d'un
+motor de jocs i, sobretot, explica per què existeix Vulkan: quins límits del
+model gràfic anterior el van motivar, quin intent es va fer de resoldre'ls sense
+trencar-lo i quin principi governa l'API resultant. Aquesta darrera part no és
+context decoratiu, sinó la premissa que sosté els dos capítols següents, ja que
+la manera com l'API reparteix responsabilitats determina quins subsistemes ha de
+tenir qualsevol motor construït al damunt. El capítol es tanca situant el treball
+respecte dels motors existents i dels projectes que li han servit de referència.
+
+El *capítol 3* descriu el mètode. Detalla com s'ha organitzat el
+desenvolupament, com s'ha verificat i quin paper hi ha tingut la documentació
+tècnica. Inclou una secció dedicada a la procedència de les fonts, que delimita
+amb precisió què s'ha pres d'una implementació de referència i què constitueix
+aportació pròpia. Es completa amb la planificació temporal i amb la descripció de
+l'entorn de desenvolupament i de mesura.
+
+El *capítol 4* recull les sis decisions estructurals del motor: l'API gràfica, el
+llenguatge, el repartiment del control del flux, la gestió de memòria, la
+frontera entre la part independent de l'API i la seva implementació, i el model
+de recursos. Cadascuna s'exposa amb la mateixa estructura —problema,
+alternatives, criteri i cost— i es fonamenta en la font corresponent.
+
+El *capítol 5* descriu com s'han implementat aquestes decisions. Tracta en
+profunditat l'arquitectura general i el cicle d'un #f[frame], la gestió de
+memòria i la instrumentació, la sincronització entre processador i dispositiu, i
+els sistemes de recursos; la resta de subsistemes s'hi recullen en un inventari.
+La secció dedicada a la sincronització inclou els supòsits sobre el maquinari que
+va caldre corregir perquè el motor s'executés sobre l'entorn d'aquest treball.
+
+El *capítol 6* presenta l'avaluació. Comença explicitant què mesura la
+instrumentació i quines limitacions té, atès que d'això depèn quines afirmacions
+poden sostenir-se. Segueix amb el balanç dels objectius, l'experiment sobre
+estratègies de transferència de dades cap a la memòria del dispositiu, la
+discussió dels resultats i la delimitació del seu abast.
+
+El *capítol 7* recull les conclusions, els punts forts i febles del treball, les
+limitacions del motor resultant i les línies de continuació, ordenades segons la
+relació entre el que aporten i el que costen.
+
+Els *annexos* contenen el material de consulta: la correspondència detallada
+entre les decisions de disseny i les fonts que les fonamenten, les instruccions
+de compilació i execució, la referència de la interfície pública dels
+subsistemes, els resultats complets de les mesures i la planificació detallada.
 
 // =============================================================================
 = Estat de l'art i marc tecnològic
@@ -327,10 +491,10 @@ de manera conjunta a les conclusions.
 
 Cal precisar el que la taula recull com a perfilatge i depuració: el motor
 disposa de comptadors d'ocupació de memòria per etiqueta i d'una capa
-d'instrumentació temporal que mesura el cost de cada fase del #f[frame]. No hi
-ha, en canvi, cap eina de depuració visual ni mesura de temps de dispositiu, de
-manera que la cobertura d'aquesta capa és parcial. El capítol 6 en detalla
-l'abast i les limitacions.
+d'instrumentació que mesura el cost de cada fase del #f[frame], tant al
+processador com al dispositiu. No hi ha, en canvi, cap eina de depuració visual
+ni representació en pantalla d'aquestes dades, de manera que la cobertura
+d'aquesta capa és parcial. El capítol 6 en detalla l'abast i les limitacions.
 
 == De OpenGL a Vulkan: per què existeix Vulkan
 
@@ -749,13 +913,13 @@ conté la correspondència detallada entre cada decisió i la font que la foname
 Els elements següents no provenen de la implementació de referència i són
 verificables a l'historial del repositori.
 
-/ Adaptació a GPU integrades: El #f[commit] `a0f9a24` adapta el codi de Vulkan a
-  dispositius no discrets i corregeix un defecte de sincronització subjacent que
-  ho impedia. El defecte només es manifesta quan el nombre d'imatges de la
-  #f[swapchain] i el nombre de #f[frames] en vol difereixen, cosa que no succeeix
-  al maquinari sobre el qual es desenvolupa la sèrie de referència. Localitzar-lo
-  va requerir entendre el model de sincronització de l'API, no reproduir-lo. El
-  capítol 5 en detalla el mecanisme.
+/ Adaptació a maquinari no previst: El #f[commit] `a0f9a24` corregeix quatre
+  supòsits que el codi feia sobre el dispositiu i que no es compleixen sobre una
+  GPU integrada ni sobre un compositor que imposi una extensió de finestra
+  pròpia. Cap dels quatre es manifesta al maquinari sobre el qual es desenvolupa
+  la implementació de referència, de manera que localitzar-los va exigir entendre
+  què garanteix l'API i què no, en lloc de reproduir-ne el codi. El capítol 5 en
+  detalla els quatre casos.
 
 / Portabilitat i conformitat: El #f[commit] `317f497` elimina els vectors de
   longitud variable del codi i resol diversos problemes que impedien l'execució
@@ -772,8 +936,10 @@ verificables a l'historial del repositori.
   #f[frame], dissenyat a partir de la descripció de perfilatge integrat i
   d'estadístiques de memòria d'@gregory2018. Manté una finestra mòbil de mostres
   per obtenir xifres estables i acumuladors independents del bucle per a les
-  operacions que només succeeixen a l'arrencada. El capítol 5 en descriu el
-  disseny i el capítol 6 el fa servir.
+  operacions que només succeeixen a l'arrencada. Mesura per separat el temps de
+  l'amfitrió i el del dispositiu, aquest últim mitjançant consultes de marca de
+  temps @vulkanspec. El capítol 5 en descriu el disseny i el capítol 6 el fa
+  servir.
 
 / Avaluació empírica: El disseny experimental i les mesures del capítol 6.
 
@@ -1415,29 +1581,507 @@ visible: la repetició no afecta dos subsistemes sinó tres.
 
 == Arquitectura general i cicle de vida
 
-#todo[Diagrama de capes + seqüència d'arrencada + cicle d'un #f[frame]. Aquesta
-secció és el mapa; les quatre següents són el detall.]
+=== Estructura
+
+El motor es distribueix com a biblioteca compartida i l'aplicació que
+l'exercita s'hi enllaça. La correspondència entre els seus mòduls i les capes
+del model de referència ja s'ha establert a la @tab:capes; aquesta secció en
+descriu el funcionament dinàmic, és a dir, què succeeix en arrencar i què
+succeeix a cada #f[frame].
+
+=== Seqüència d'arrencada
+
+La funció que construeix l'aplicació reserva un bloc de 64 MiB i inicialitza
+onze subsistemes en un ordre fix, segons el patró descrit al capítol 4. L'ordre
+no és arbitrari: cada posició respon a una dependència concreta, i la @tab:ordre
+les recull.
+
+#figure(
+  table(
+    columns: (auto, auto, 1fr),
+    inset: 6pt,
+    align: (right, left, left),
+    stroke: 0.4pt + rgb("#ccc"),
+    table.header([], [*Subsistema*], [*Motiu de la posició*]),
+    [1], [Esdeveniments], [L'entrada hi publica; ha d'existir abans que ningú s'hi subscrigui.],
+    [2], [Memòria], [Només instal·la el comptador: les reserves funcionen abans, sense comptabilitzar.],
+    [3], [Registre], [Depèn del sistema de fitxers, que no requereix inicialització, i de la sortida per consola de la plataforma, que funciona sense finestra.],
+    [4], [Instrumentació], [Ha de precedir tot allò que pugui mesurar. Només depèn del rellotge absolut.],
+    [5], [Entrada], [Requereix el sistema d'esdeveniments.],
+    [6], [Plataforma], [Crea la finestra.],
+    [7], [Recursos], [Estableix l'arrel dels actius i registra els carregadors.],
+    [8], [Renderitzador], [Necessita la finestra per crear la superfície de presentació.],
+    [9], [Textures], [Necessita el renderitzador per crear recursos al dispositiu.],
+    [10], [Materials], [Adquireix textures.],
+    [11], [Geometria], [Adquireix materials.],
+  ),
+  caption: [Ordre d'inicialització dels subsistemes i dependència que el motiva.],
+) <tab:ordre>
+
+Les quatre darreres posicions formen una cadena de dependències estricta que
+il·lustra el principi enunciat al capítol 2: la geometria depèn dels materials,
+que depenen de les textures, que depenen del renderitzador. Invertir qualsevol
+d'aquests parells produiria una dependència circular.
+
+Val la pena assenyalar dues posicions que semblen arbitràries i no ho són. El
+sistema de memòria ocupa la segona posició tot i que el d'esdeveniments, que el
+precedeix, ja hi reserva memòria de manera indirecta; això funciona perquè la
+inicialització d'aquest subsistema només instal·la el comptador d'ocupació, i
+les reserves anteriors succeeixen sense comptabilitzar-se. El registre ocupa la
+tercera tot i dependre de la plataforma, perquè la funció d'escriptura per
+consola que utilitza no requereix que la finestra existeixi.
+
+=== Cicle d'un #f[frame]
+
+El bucle principal executa, a cada iteració, la seqüència que recull la
+@fig:bucle.
+
+#figure(
+  block(width: 88%)[
+    #let pas(n, t, d) = grid(
+      columns: (1.4em, 9em, 1fr),
+      column-gutter: 6pt,
+      align(right)[#text(size: 8.5pt, weight: "bold")[#n]],
+      text(size: 8.5pt, weight: "bold", t),
+      text(size: 8.5pt, d),
+    )
+    #stack(spacing: 5pt,
+      pas("1", "Plataforma", "Drena els esdeveniments del sistema, que alimenten l'entrada, que publica esdeveniments del motor."),
+      pas("2", "Rellotge", "Calcula el pas de temps de la iteració."),
+      pas("3", "Actualització", "Crida la funció del joc; el codi de prova hi mou la càmera."),
+      pas("4", "Renderitzat", "Crida la funció de renderitzat del joc, avui buida."),
+      pas("5", "Paquet", "Construeix el paquet amb les geometries de món i d'interfície."),
+      pas("6", "Dibuix", "Enregistra i envia la feina de renderitzat al dispositiu."),
+      pas("7", "Entrada", "Copia l'estat actual d'entrada a l'estat previ."),
+    )
+  ],
+  caption: [Seqüència d'una iteració del bucle principal.],
+) <fig:bucle>
+
+L'últim pas mereix atenció perquè és l'exemple concret que justifica la decisió
+documentada al capítol 4 sobre qui posseeix el bucle. La còpia de l'estat
+d'entrada ha de ser l'última operació de la iteració: és la que converteix
+l'estat actual en previ i, per tant, la que permet distingir una tecla que
+s'acaba de prémer d'una que ja ho estava. Situar-la en qualsevol altre punt no
+produeix cap error visible ni cap advertència, però fa que la detecció de
+transicions deixi de funcionar de manera silenciosa. És una ordenació que el
+motor ha de garantir i que no convé confiar a cada joc.
+
+La construcció del paquet de renderitzat és, avui, codi provisional marcat com a
+tal: recull una geometria de món i una d'interfície fixes. És el punt on hauria
+d'encaixar una representació d'escena, i la seva absència es discuteix al
+capítol 7.
 
 == Gestió de memòria
 
-#todo[`hmemory` amb etiquetes, assignador lineal, i l'assignador de #f[frame]
-implementat des de [GEA §6.2.1.3]. Marcar clarament què és aportació pròpia.]
+La gestió de memòria del motor es reparteix en tres nivells amb propòsits
+diferents: una capa de reserva etiquetada que fa visible on van els bytes, un
+assignador lineal que decideix on resideix l'estat dels subsistemes, i la
+memòria del dispositiu, que l'API no gestiona en nom de l'aplicació. A aquests
+tres s'hi afegeix la capa d'instrumentació que els mesura.
+
+=== Reserva etiquetada
+
+Totes les reserves del motor passen per una funció pròpia que embolcalla la de
+la plataforma i hi afegeix una etiqueta de categoria: vectors dinàmics, cadenes,
+textures, renderitzador, escena i altres, fins a divuit. La capa manté el total
+acumulat per etiqueta i el nombre total de reserves efectuades.
+
+L'objectiu no és el rendiment —la reserva subjacent és la del sistema— sinó la
+visibilitat. Permet respondre en qualsevol moment a on són els bytes, i el
+comptador de reserves permet detectar reserves accidentals dins del bucle
+principal, que és el diagnòstic que la bibliografia recomana per a aquest cas
+@gregory2018.
+
+La capa no manté cap metadada per reserva individual, cosa que té una
+conseqüència visible a la interfície: qui allibera ha de tornar a indicar la
+mida. És el preu de no afegir una capçalera a cada bloc.
+
+=== L'assignador lineal
+
+El segon nivell és un assignador lineal sobre un bloc de mida fixa: reparteix
+adreces de manera incremental i no allibera mai peces individuals, només el bloc
+sencer. Admet dos modes de propietat, segons si reserva el bloc ell mateix o
+opera sobre un que se li lliura.
+
+L'aplicació en crea un de 64 MiB en arrencar i hi col·loca l'estat dels onze
+subsistemes mitjançant el patró descrit al capítol 4. El resultat és que tot
+l'estat de llarga durada del motor resideix en una regió contigua amb un cicle
+de vida igual al del procés.
+
+Aquesta estructura correspon a l'assignador de pila que descriu la bibliografia
+@gregory2018, amb una funcionalitat menys: la possibilitat d'obtenir un
+marcador de la posició actual i, més endavant, retornar-hi alliberant de cop tot
+el que s'hagi reservat des d'aleshores. Aquesta absència no afecta l'ús actual
+—estat que viu tota l'execució— però impedeix l'ús que la mateixa font descriu
+a continuació: un assignador de #f[frame], que es reinicia a cada iteració i
+permet reserves temporals a cost nul @gregory2018. Es recull com a línia de
+continuació.
+
+=== Memòria de dispositiu
+
+El tercer nivell és el que l'API deixa explícitament a l'aplicació. Com s'ha
+exposat al capítol 2, el dispositiu exposa diversos #f[heaps] amb propietats
+diferents i l'aplicació ha de consultar-les en lloc de presuposar-les
+@vulkanspec.
+
+El motor obté la memòria del dispositiu mitjançant el patró de búfer intermedi:
+reserva un búfer visible des del processador, hi copia les dades, ordena una
+còpia cap a un búfer local al dispositiu i destrueix l'intermedi. El mateix
+procediment, amb una transició addicional de disposició d'imatge, porta els
+píxels d'una textura fins a la seva imatge.
+
+Sobre el maquinari descrit al capítol 3 aquest procediment mereix una
+consideració que el capítol 6 examina amb mesures: en una arquitectura de
+memòria unificada els tipus de memòria local al dispositiu i visible des del
+processador coincideixen en bona part, de manera que la còpia intermèdia pot
+resultar innecessària.
+
+La reserva de memòria de dispositiu es fa avui en blocs grans i fixos per als
+búfers de vèrtexs i d'índexs, sense subassignador. La documentació de referència
+adverteix que les reserves individuals estan limitades en nombre i recomana
+precisament reservar blocs grans i subassignar-hi a dins @riguer2015; el motor
+en fa la primera meitat i no la segona.
+
+=== Instrumentació
+
+Sobre aquests tres nivells hi ha una capa que mesura el comportament del motor
+sense recórrer a eines externes, seguint la descripció de perfilatge integrat i
+d'estadístiques de memòria de la bibliografia @gregory2018.
+
+El seu funcionament és delimitar amb un nom les fases del #f[frame] i acumular
+el temps de cadascuna. Una secció visitada diverses vegades dins d'un mateix
+#f[frame] hi reporta el total i no l'última visita, cosa que importa per a
+operacions que poden repetir-se.
+
+Les mesures no es reporten per #f[frame] sinó sobre una finestra mòbil de cent
+vint mostres, de la qual s'obtenen mitjana, mínim i màxim. La raó és que el
+temps d'un sol #f[frame] és majoritàriament soroll; una finestra mòbil dona
+xifres estables i, a diferència de reiniciar l'acumulador periòdicament, no
+introdueix cap discontinuïtat.
+
+El disseny va requerir una segona estructura que no estava prevista inicialment.
+Les càrregues de recursos cap al dispositiu succeeixen gairebé totes durant
+l'arrencada, abans que existeixi cap #f[frame], de manera que la finestra les
+reportava com a zero. La capa manté, per tant, acumuladors de vida sencera al
+costat de la finestra: temps total i nombre d'execucions per secció,
+independents del bucle. La distinció resulta ser la que separa les mesures de
+cadència de les mesures d'operacions puntuals, i el capítol 6 fa servir totes
+dues.
+
+L'informe s'emet un cop per segon al registre, de manera que redirigir la
+sortida a un fitxer n'hi ha prou per capturar una sessió de mesura.
+
+=== Mesura de temps de dispositiu
+
+El rellotge de l'amfitrió no serveix per saber quant triga la GPU. Com que
+l'enviament de feina retorna immediatament, cronometrar-lo mesura el que el
+processador dedica a enregistrar i enviar, no el que el dispositiu dedica a
+executar. Obtenir la segona magnitud requereix un mecanisme de l'API: escriure
+marques de temps dins del flux d'ordres i llegir-les quan s'han completat
+@vulkanspec.
+
+El motor reserva dues consultes per cada #f[frame] en vol i n'escriu una en
+obrir el #f[command buffer] i una altra just abans de tancar-lo. La diferència
+entre ambdues, multiplicada pel període de tic que el dispositiu declara, dona
+el temps d'execució.
+
+Dos aspectes d'aquesta implementació mereixen comentari.
+
+El primer és la comprovació de suport, que segueix el criteri establert a la
+secció sobre supòsits del dispositiu. El nombre de bits vàlids de marca de temps
+es reporta *per família de cues* i pot ser zero, cas en què les marques escrites
+en aquella cua no tenen cap valor. El motor el consulta abans de crear la reserva
+de consultes i, si no hi ha suport, ho registra i continua sense mesura de
+dispositiu: es tracta d'un diagnòstic, no d'una funcionalitat de la qual depengui
+el renderitzat. Sobre el maquinari de desenvolupament, un tic equival a 52,08
+nanosegons.
+
+El segon és quan es poden llegir els resultats. Una consulta només es pot llegir
+quan la feina que la va escriure ha acabat, i comprovar-ho exigiria una
+sincronització que alteraria precisament allò que es vol mesurar. La solució
+aprofita una espera que el motor ja fa: com s'explica a la secció sobre
+sincronització, cada iteració comença esperant la tanca del seu #f[frame] lògic,
+i aquesta espera garanteix que la feina enviada anteriorment en aquella mateixa
+ranura ha finalitzat. Els resultats es llegeixen just després, sense afegir cap
+sincronització nova.
+
+La conseqüència és que la xifra obtinguda correspon al #f[frame] enviat dues
+iteracions abans i no al que s'inicia. Sobre una finestra de cent vint mostres
+aquest desfasament és irrellevant, però convé tenir-lo present si mai
+s'interpreten mesures individuals.
+
+=== Limitacions
+
+Cap dels dos assignadors alinea les reserves: retornen l'adreça següent. Els
+estats dels subsistemes queden alineats per la mida de les estructures que els
+precedeixen i no per garantia de l'assignador. La bibliografia dedica un apartat
+a per què això és un problema de correcció en algunes arquitectures i de
+rendiment en la resta @gregory2018, i l'API gràfica és estricta en aquest punt
+del costat del dispositiu, on exigeix que els desplaçaments siguin múltiples
+d'una alineació que el controlador reporta @vulkanspec. El costat de l'amfitrió
+del motor és, doncs, el laxe. El codi ho té marcat en dos punts.
+
+L'assignador retorna un punter nul en exhaurir-se i ho registra, però la funció
+que en reparteix l'estat no en comprova el valor abans de lliurar-lo al
+subsistema. Exhaurir els 64 MiB no produiria un diagnòstic sinó un accés a
+memòria nul·la.
+
+Hi ha, finalment, una limitació del comptador que es pot observar en el seu
+propi informe. Tant l'estat de l'aplicació com el bloc de 64 MiB es reserven
+abans que el subsistema de memòria s'inicialitzi —n'és l'ordre descrit a la
+@tab:ordre— de manera que cap dels dos hi apareix. L'informe emès just abans
+d'entrar al bucle principal declara poc més de quatre quilobytes en total, quan
+el procés en té reservats seixanta-quatre megabytes. El mateix passa amb les
+reserves que alguns subsistemes efectuen durant la seva pròpia inicialització,
+que queden fora del bloc de sistemes. La xifra de 64 MiB descriu, doncs, la
+capacitat reservada per a l'estat dels subsistemes, i l'informe descriu el que
+s'ha reservat després d'instal·lar el comptador; cap de les dues no és la
+petjada real del procés.
+
+#todo[Valorar si val la pena corregir-ho movent la inicialització del comptador
+abans de la primera reserva, o bé comptabilitzant-hi explícitament els dos blocs
+inicials. És un canvi petit i faria que l'informe fos autoexplicatiu. Si es
+corregeix, cal actualitzar aquesta secció i les xifres del capítol 6.]
 
 == Sincronització CPU/GPU i el bucle de #f[frame]
 
-#todo[La secció amb més valor de defensa que teniu. Tres sincronitzacions
-diferents (CPU per davant de GPU, dibuix després d'adquisició, presentació
-després de dibuix) i per què els vectors de semàfors tenen mides diferents.
-Explicar el defecte trobat: quan `image_count` i `max_frames_in_flight`
-divergeixen — cosa que no passa al maquinari del tutorial — la indexació
-incorrecta del semàfor de senyalització provoca l'error. Trobar-lo va exigir
-entendre el model, no transcriure'l.]
+=== El problema
+
+Com s'ha exposat al capítol 2, l'enviament de feina a una cua retorna el control
+a l'aplicació abans que la feina s'executi, i no hi ha cap restricció d'ordenació
+implícita entre operacions de cues diferents @vulkanspec. El renderitzador, per
+tant, no dibuixa: enregistra ordres i les envia. Tot allò que hagi de succeir en
+un ordre determinat ha de ser ordenat explícitament per l'aplicació.
+
+L'API distingeix dues primitives per fer-ho, i la distinció és precisament la
+que determina quina s'utilitza a cada punt. Una tanca introdueix una dependència
+d'una cua cap a l'amfitrió: el processador hi espera per saber que la feina del
+dispositiu ha acabat @vulkanspec. Un semàfor introdueix una dependència entre
+operacions de cua: el dispositiu hi espera per saber que una altra feina seva ha
+acabat @vulkanspec.
+
+=== Les tres ordenacions
+
+A cada #f[frame] cal garantir tres coses diferents, i el motor manté quatre
+vectors d'objectes de sincronització per fer-ho. La @tab:sync els recull.
+
+#figure(
+  table(
+    columns: (auto, auto, 1fr),
+    inset: 6pt,
+    align: (left, left, left),
+    stroke: 0.4pt + rgb("#ccc"),
+    table.header([*Vector*], [*Mida*], [*Funció*]),
+    [Tanques de #f[frame] en vol],
+    [#f[frames] en vol],
+    [El processador hi espera al començament del #f[frame] per no avançar-se més
+     enllà del nombre de #f[frames] que el motor permet tenir en curs.],
+    [Semàfors d'imatge disponible],
+    [#f[frames] en vol],
+    [L'adquisició d'imatge els senyala; l'enviament hi espera abans d'escriure a
+     l'adjunt de color.],
+    [Semàfors de feina completada],
+    [imatges de la cadena],
+    [L'enviament els senyala; la presentació hi espera.],
+    [Tanques per imatge],
+    [imatges de la cadena],
+    [Punters a la tanca del #f[frame] lògic que va fer servir cada imatge per
+     darrera vegada.],
+  ),
+  caption: [Objectes de sincronització i criteri de dimensionament.],
+) <tab:sync>
+
+La primera ordenació és que el processador no s'avanci indefinidament al
+dispositiu. El motor permet dos #f[frames] lògics en curs simultàniament; en
+començar-ne un, espera la tanca corresponent. Les tanques es creen ja
+senyalitzades perquè els dos primers #f[frames] no esperin una senyal que ningú
+no emetrà.
+
+La segona és que el dibuix no comenci abans que la imatge de destinació estigui
+realment disponible. L'adquisició retorna un índex immediatament, però la imatge
+no està llesta fins que el semàfor associat es senyala @vulkanspec. L'enviament
+hi espera a l'etapa d'escriptura de l'adjunt de color, de manera que el
+processament de vèrtexs pot començar abans i només es retarda l'escriptura.
+
+La tercera és que la presentació no comenci abans que el dibuix hagi acabat, cosa
+que s'aconsegueix amb el semàfor que l'enviament senyala i que la presentació
+espera.
+
+=== Per què els vectors tenen mides diferents
+
+Aquest és el punt no evident del disseny. El nombre de #f[frames] lògics en curs
+és una decisió del motor —dos— mentre que el nombre d'imatges de la cadena
+d'intercanvi el decideix el sistema de presentació a partir del mínim que la
+superfície reporta. No hi ha cap raó perquè coincideixin.
+
+Els objectes lligats al ritme del processador es dimensionen, doncs, pel nombre
+de #f[frames] en vol, i els lligats a una imatge concreta es dimensionen pel
+nombre d'imatges i s'indexen per índex d'imatge. Indexar un semàfor de feina
+completada pel #f[frame] lògic en lloc de fer-ho per la imatge faria que la
+presentació d'una imatge pogués esperar un semàfor que senyalarà l'enviament
+d'un #f[frame] diferent. El vector de tanques per imatge tanca el buit restant:
+abans de reutilitzar una imatge, el motor espera la tanca del #f[frame] que la
+va fer servir per darrera vegada.
+
+Sobre maquinari on els dos nombres coincideixen, els índexs també ho fan i
+aquesta distinció és invisible. És un cas clar d'una propietat que només es pot
+verificar provant sobre maquinari divers.
+
+=== Supòsits sobre el dispositiu
+
+La secció anterior descriu el disseny tal com és avui. Arribar-hi va requerir
+corregir un conjunt de supòsits que el codi feia sobre el dispositiu i que
+resultaven certs al maquinari de desenvolupament de la implementació de
+referència però no al d'aquest treball. Els quatre casos, documentats al
+#f[commit] `a0f9a24`, comparteixen la mateixa naturalesa i val la pena
+enumerar-los perquè il·lustren una lliçó concreta.
+
+/ Selecció de dispositiu: La selecció exigia una GPU discreta com a requisit
+  estricte, de manera que en un portàtil amb només gràfics integrats no trobava
+  cap dispositiu apte i l'arrencada fallava. La correcció fa la selecció en dues
+  passades: la primera manté l'exigència i, si cap dispositiu no la satisfà, la
+  segona la relaxa i accepta qualsevol dispositiu que compleixi la resta de
+  requisits. Les GPU discretes continuen sent preferides quan n'hi ha.
+
+/ Extensió de la superfície: El codi construïa la passada de renderitzat i els
+  #f[framebuffers] a partir de la mida sol·licitada per a la finestra. La
+  superfície, però, pot imposar una extensió diferent —per escalat fraccionari o
+  per decoracions de finestra—, i les imatges de la cadena d'intercanvi es
+  dimensionen a partir d'aquesta extensió efectiva. Sobre Windows totes dues
+  coincidien; sobre un compositor que n'imposa una altra, no, i els adjunts no
+  coincidien amb la passada. La correcció propaga l'extensió efectiva de tornada
+  perquè tot el dimensionament posterior en derivi.
+
+/ Recursos per imatge: Diversos vectors de recursos indexats per imatge estaven
+  dimensionats amb la constant tres, donant per fet un triple
+  emmagatzematge. El nombre real d'imatges el decideix el controlador i varia
+  entre dispositius. La correcció els dimensiona en temps d'execució a partir del
+  nombre que la cadena reporta, amb un límit superior i una asserció que el
+  verifica.
+
+/ Filtratge anisotròpic: El mostrejador sol·licitava setze mostres de manera
+  fixa, valor que una GPU integrada pot no admetre. La correcció el limita al
+  màxim que el dispositiu declara.
+
+El denominador comú és que cadascun d'aquests valors estava escrit al codi en
+lloc de consultar-se al dispositiu. És, literalment, l'advertència que la
+documentació de Mantle ja feia el 2015 i que es va citar al capítol 2: no
+presuposar les propietats del sistema, sinó consultar les que aquest reporta
+@riguer2015. Trobar-los va exigir entendre què garanteix l'API i què deixa a
+criteri de la implementació, cosa que no es dedueix de veure funcionar el codi
+sobre una sola màquina.
+
+=== Limitacions
+
+L'enregistrament de les ordres es fa en un sol fil d'execució. L'API està
+dissenyada perquè diversos fils puguin enregistrar #f[command buffers] en
+paral·lel, i especifica quins objectes requereixen sincronització externa
+precisament per permetre-ho @vulkanspec; el motor no ho aprofita. És la
+limitació més rellevant del treball i es discuteix al capítol 7.
+
+Aquesta limitació deixa de ser una conjectura un cop el motor mesura per separat
+el temps de l'amfitrió i el del dispositiu, tal com descriu la secció sobre
+gestió de memòria. Les mesures preliminars mostren que el dispositiu completa la
+feina d'un #f[frame] en una fracció del temps que el processador dedica a
+enregistrar-la i enviar-la, de manera que el coll d'ampolla del motor no és la
+capacitat de dibuix sinó el camí d'enviament. El capítol 6 hi torna amb les
+xifres i la discussió corresponents.
 
 == Sistemes de recursos
 
-#todo[Textures, materials, geometria. El format `.hmt` com a primer actiu
-dirigit per dades. Traçar el camí sencer: fitxer → configuració → recurs →
-descriptor de GPU.]
+La gestió d'actius del motor es reparteix en dos nivells. Un nivell inferior
+s'ocupa d'obtenir les dades d'un actiu des del disc i lliurar-les en memòria; un
+nivell superior s'ocupa de convertir-les en recursos utilitzables, de
+compartir-los i de decidir quan es descarreguen. La separació és recent i, com
+s'ha indicat, encara no és completa.
+
+=== El sistema de recursos
+
+El nivell inferior és un registre de carregadors especialitzats. Cada carregador
+declara el tipus de recurs que sap tractar, el subdirectori on aquest tipus
+resideix, i una parella de funcions per carregar-lo i descarregar-lo. Qui
+necessita un actiu no obre cap fitxer: demana un nom i un tipus, i el sistema
+localitza el carregador corresponent, en compon la ruta a partir d'una arrel
+configurable i li delega la feina.
+
+El resultat s'entrega en una estructura uniforme que identifica el carregador
+que l'ha produït, el nom i la ruta completa de l'actiu, i un bloc de dades amb
+la seva mida. El camp que identifica el carregador és el que permet que la
+descàrrega sigui simètrica sense que qui la demana hagi de recordar de quin
+tipus era el recurs.
+
+Hi ha quatre carregadors implementats —text, binari, imatge i material— sobre un
+conjunt de tipus que en preveu dos més, malla estàtica i tipus definit per
+l'usuari, encara sense implementació.
+
+Aquesta capa és la que va permetre retirar l'accés directe al sistema de fitxers
+que els sistemes de textures i de materials feien abans, i amb ell les rutes
+compostes amb literals dins del codi. És, en la seva funció de localització i
+càrrega, la capa unificada d'accés a actius que el capítol 4 assenyalava com a
+mancança.
+
+=== Els sistemes consumidors
+
+Sobre aquesta base hi ha tres sistemes —textures, materials i geometries— que
+comparteixen la mateixa estructura: un vector de registres, una taula de
+dispersió que associa noms amb referències, i la política de cicle de vida
+descrita al capítol 4, basada en recompte de referències i en un indicador
+d'alliberament automàtic.
+
+Tots tres mantenen, a més, un recurs per defecte que no prové de disc. La
+textura per defecte és un tauler d'escacs generat per codi, i existeix perquè el
+renderitzador pugui funcionar sense cap actiu disponible i perquè un actiu que
+no es pugui carregar tingui un substitut visible en lloc de provocar una
+fallada.
+
+=== Un actiu, de punta a punta
+
+El camí complet d'un material il·lustra com encaixen les dues capes. La
+@fig:recurs en resumeix els passos.
+
+#figure(
+  block(width: 92%)[
+    #let pas(t, d) = grid(
+      columns: (13em, 1fr),
+      column-gutter: 8pt,
+      text(size: 8.5pt, weight: "bold", t),
+      text(size: 8.5pt, d),
+    )
+    #stack(spacing: 5pt,
+      pas("Petició", "Es demana un material pel seu nom."),
+      pas("Localització", "El sistema de recursos resol la ruta i tria el carregador de materials."),
+      pas("Anàlisi", "El carregador llegeix el fitxer de text i n'omple una estructura de configuració amb el nom, el color difús i el nom del mapa difús."),
+      pas("Adquisició de textura", "La configuració nomena una textura; el sistema de materials l'adquireix del de textures, que al seu torn torna a passar pel sistema de recursos, aquest cop amb el carregador d'imatges."),
+      pas("Recursos de dispositiu", "El renderitzador reserva el conjunt de descriptors del material i en desa l'identificador intern."),
+      pas("Ús", "En dibuixar, el material aporta el color difús i la textura al conjunt de descriptors per objecte."),
+    )
+  ],
+  caption: [Camí de càrrega d'un material, des del fitxer fins al dibuix.],
+) <fig:recurs>
+
+El pas d'adquisició de textura és el que fa que el recompte de referències tingui
+sentit: el material no conté la textura sinó que la nomena, de manera que dos
+materials que anomenin la mateixa textura en comparteixen una sola còpia a la
+memòria del dispositiu.
+
+El fitxer de material és, a més, el primer actiu del motor dirigit per dades en
+el sentit que li dona la bibliografia: una definició que resideix en un fitxer
+de text i no al codi. Inclou un camp de versió que actualment no s'interpreta,
+previst per permetre'n l'evolució del format.
+
+=== Unificació parcial
+
+Convé ser precís sobre l'abast d'aquesta reorganització. El sistema de recursos
+unifica la localització i la càrrega, però no la gestió del cicle de vida:
+textures, materials i geometries continuen mantenint cadascun la seva taula de
+referències i la seva política d'alliberament. La duplicació que el capítol 4
+assenyalava entre dos subsistemes afecta ara tres.
+
+La unificació completa exigiria que el recompte de referències i la
+identificació per nom residissin també al nivell inferior, de manera que els
+sistemes especialitzats només aportessin la interpretació específica de cada
+tipus. Es recull com a línia de continuació al capítol 7.
 
 == Resta de subsistemes
 
@@ -1563,10 +2207,10 @@ la resolució de rutes. Es tracta, precisament, del tipus de capa genèrica que 
 secció sobre el model de recursos del capítol 4 assenyalava com a mancança, tot i
 que la unificació encara no és completa.
 
-#todo[Aquesta última afirmació cal contrastar-la amb l'estat final del codi: el
-sistema de recursos resol la càrrega, però els sistemes de textures, materials i
-geometria continuen mantenint cadascun la seva pròpia taula de referències. Cal
-decidir si això es presenta com a unificació parcial o com a mancança pendent.]
+La unificació assolida és, però, parcial: el sistema de recursos centralitza la
+càrrega i la resolució de rutes, però els sistemes de textures, materials i
+geometria continuen mantenint cadascun la seva pròpia taula de referències. La
+secció següent en detalla el repartiment de responsabilitats.
 
 // =============================================================================
 = Resultats i discussió
@@ -1582,48 +2226,413 @@ decidir si això es presenta com a unificació parcial o com a mancança pendent
 
 == Metodologia de mesura
 
-#todo[Com es mesura: instrumentació pròpia, nombre de repeticions, què es
-descarta (#f[frames] d'escalfament), maquinari i controlador exactes. Sense
-això, els resultats no són defensables.]
+=== Instrument
+
+Totes les mesures d'aquest capítol provenen de la capa d'instrumentació pròpia
+descrita al capítol 5, sense recórrer a eines externes. Aquesta capa proporciona
+tres magnituds de naturalesa diferent, i convé no confondre-les:
+
+/ Temps d'amfitrió per fase: Cronometrat amb el rellotge monotònic del sistema,
+  acumulat dins de cada #f[frame] i reportat sobre una finestra mòbil de cent
+  vint mostres. Mesura el que el processador dedica a cada fase.
+
+/ Temps de dispositiu: Obtingut amb consultes de marca de temps escrites al flux
+  d'ordres. Mesura el que la GPU dedica a executar el #f[frame]. Sobre el
+  maquinari emprat, un tic de marca equival a 52,08 nanosegons.
+
+/ Acumuladors de vida sencera: Temps total i nombre d'execucions per secció des
+  de l'arrencada, independents del bucle de #f[frames]. Són els que permeten
+  mesurar operacions que només succeeixen una vegada, com les càrregues de
+  recursos.
+
+L'informe s'emet un cop per segon al registre, de manera que cada execució
+mesurada es captura redirigint la sortida a un fitxer.
+
+=== Protocol
+
+Les configuracions que es comparen se seleccionen en temps d'execució
+mitjançant variables d'entorn, de manera que totes les mesures provenen del
+mateix binari compilat una sola vegada. Això elimina qualsevol diferència
+atribuïble a la compilació.
+
+Cada configuració s'executa tres vegades. Les execucions duren uns set segons,
+prou perquè la finestra de mostres s'ompli diverses vegades i perquè les
+operacions d'arrencada s'hagin completat. L'entorn de mesura és l'equip A de la
+@tab:maquinari.
+
+=== Limitacions de l'instrument
+
+Tres limitacions condicionen què es pot afirmar a partir d'aquestes mesures, i
+val la pena enunciar-les abans dels resultats.
+
+La primera afecta el temps de dispositiu. Una consulta només es pot llegir quan
+la feina que la va escriure ha acabat, de manera que la xifra obtinguda en un
+#f[frame] correspon al que es va enviar dues iteracions abans. Sobre una
+finestra de cent vint mostres el desfasament no altera les mitjanes, però
+invalida qualsevol lectura de mesures individuals.
+
+La segona afecta el temps per #f[frame]. La capa no descarta cap període
+d'escalfament: la finestra comença a omplir-se amb el primer #f[frame] i
+llisca, de manera que l'informe que es consulta reflecteix els cent vint
+#f[frames] immediatament anteriors, siguin quins siguin. Com es veurà, això
+produeix una variància entre execucions prou gran com perquè les mesures per
+#f[frame] no permetin distingir configuracions que difereixen poc.
+
+La tercera afecta les xifres d'ocupació de memòria. Com s'ha documentat al
+capítol 5, el comptador s'inicialitza després que s'hagin reservat l'estat de
+l'aplicació i el bloc de seixanta-quatre megabytes, de manera que cap dels dos
+hi apareix. Les xifres d'ocupació que reporta són, per tant, incompletes i no
+s'utilitzen com a resultat en aquest capítol.
+
+#todo[Si es corregeix el punt cec del comptador, tal com suggereix el capítol 5,
+cal actualitzar aquest paràgraf i considerar si val la pena afegir un experiment
+sobre ocupació de memòria.]
 
 == Assoliment dels objectius funcionals
 
-#todo[Per a cada objectiu específic de §1.2, l'evidència que s'ha assolit.
-Captures del motor en funcionament. Aquesta secció és la que tanca el cercle
-amb «los objetivos están bien delimitados».]
+Aquesta secció respon un per un als objectius específics plantejats al capítol 1,
+amb l'evidència corresponent i l'estat en què ha quedat cadascun. La
+@tab:objectius en resumeix el balanç.
+
+#figure(
+  table(
+    columns: (1fr, auto, auto),
+    inset: 6pt,
+    align: (left, left, left),
+    stroke: 0.4pt + rgb("#ccc"),
+    table.header([*Objectiu*], [*Estat*], [*Evidència*]),
+    [Capa de plataforma portable], [Assolit], [§5.1, §5.5],
+    [Renderitzador amb recursos des de disc i il·luminació], [Assolit], [§5.3, §5.4],
+    [Model de gestió de memòria explícit], [Assolit amb limitacions], [§5.2],
+    [Validació sobre les dues arquitectures de memòria], [Parcial], [§6.3],
+    [Documentació de les decisions contra fonts primàries], [Assolit], [Cap. 4, Annex A],
+    [Capa d'instrumentació pròpia], [Assolit], [§5.2, §6.1],
+    [Avaluació empírica de decisions del renderitzador], [Parcial], [§6.3],
+  ),
+  caption: [Balanç dels objectius específics.],
+) <tab:objectius>
+
+=== Capa de plataforma
+
+El motor defineix una interfície de plataforma implementada dues vegades, per a
+Windows i per a Linux sobre XCB, X11 i xkbcommon, i seleccionada en temps de
+compilació. Cap subsistema per sobre d'aquesta capa conté codi condicional per
+sistema operatiu.
+
+L'evidència més sòlida d'aquesta independència no és estructural sinó històrica:
+el projecte es va desenvolupar inicialment sobre Windows i posteriorment es va
+portar a Linux, que ha estat l'entorn principal des d'aleshores, tal com
+documenta el capítol 3. El canvi va requerir escriure la implementació de la
+capa i resoldre incompatibilitats de compilació, però no modificar la lògica
+dels subsistemes superiors.
+
+#todo[Verificar que la branca actual continua compilant i executant-se sobre
+Windows. Les darreres ampliacions s'han desenvolupat íntegrament sobre Linux i
+el camí de Windows no s'ha exercitat des d'aleshores. Si hi ha regressions, cal
+corregir-les o bé matisar aquest objectiu.]
+
+=== Renderitzador
+
+El renderitzador carrega geometria, textures i materials des de disc mitjançant
+el sistema de recursos descrit a §5.4, els il·lumina amb un model de reflexió
+difusa i especular amb una llum direccional, i els dibuixa amb una càmera que
+l'usuari pot desplaçar i orientar. Disposa de dues passades de renderitzat, una
+per al món i una per a la interfície d'usuari.
+
+#todo[Inserir aquí les captures del motor en funcionament. Calen, com a mínim:
++ Vista general amb el cub texturat i il·luminat, en una orientació que mostri
+  dues o tres cares alhora perquè el degradat de la il·luminació sigui visible.
++ Detall del reflex especular.
++ La mateixa escena amb l'element d'interfície, per evidenciar les dues
+  passades.
+Cada captura necessita peu i referència creuada des d'aquest text.]
+
+=== Model de gestió de memòria
+
+L'estat dels onze subsistemes resideix en un únic bloc contigu reservat a
+l'arrencada i repartit mitjançant el patró d'inicialització en dues crides. Cap
+subsistema decideix on resideix el seu estat ni quan s'allibera: totes dues coses
+són decisions de qui el condueix. L'objectiu, formulat com a control sobre la
+ubicació i el cicle de vida, s'ha assolit.
+
+Es consigna com a assolit amb limitacions per dues raons documentades a §5.2. La
+primera és que cap dels dos assignadors alinea les reserves. La segona és que el
+comptador d'ocupació no comptabilitza ni l'estat de l'aplicació ni el bloc
+principal, de manera que les xifres que reporta són incompletes. Cap de les dues
+invalida el model, però totes dues afecten la qualitat de la seva implementació.
+
+=== Validació sobre les dues arquitectures de memòria
+
+Aquest objectiu s'ha assolit parcialment. El motor s'executa correctament sobre
+els dos equips descrits al capítol 3, i l'adaptació que ho va fer possible
+—documentada a §5.3— constitueix una de les aportacions pròpies del treball. En
+aquest sentit, la validació funcional és completa.
+
+El que no s'ha completat és el contrast del comportament. Les mesures del capítol
+6 provenen únicament de l'equip A, de memòria unificada. L'experiment està
+dissenyat per executar-se sobre tots dos i el motor selecciona l'estratègia
+consultant el dispositiu, però la meitat corresponent a la GPU dedicada resta
+pendent.
+
+=== Documentació de les decisions
+
+El capítol 4 recull sis decisions estructurals, cadascuna amb el problema que
+planteja, les alternatives considerades, el criteri aplicat i el cost assumit,
+i cadascuna referida a la font primària que la fonamenta. L'Annex A en conté la
+correspondència detallada, i el corpus de documentació tècnica del repositori
+—descrit a §3.1— l'acompanya al nivell de cada subsistema.
+
+Aquest objectiu inclou un criteri que convé destacar: que la justificació sigui
+possible de manera independent. El treball ha generat dos casos en què l'estudi
+de les fonts va modificar el que s'hauria escrit sense elles. El primer és
+l'argument sobre el llenguatge de §4.2, on la font que es pretenia citar afirma
+el contrari del que se li volia atribuir. El segon és l'experiment de §6.3, on
+una pràctica establerta resulta prescindible sobre el maquinari emprat.
+
+=== Capa d'instrumentació
+
+El motor mesura el cost de cada fase del #f[frame] al processador, el temps que
+el dispositiu dedica a executar-lo mitjançant consultes de marca de temps, i el
+cost acumulat d'operacions que succeeixen fora del bucle. No s'ha emprat cap
+eina externa de perfilatge en tot el capítol 6.
+
+Queda fora de l'objectiu, i per tant no se'n consigna com a mancança, la
+representació d'aquestes dades en pantalla, que hauria estat útil durant el
+desenvolupament però que no era necessària per a l'avaluació.
+
+=== Avaluació empírica
+
+Assolit parcialment. Dels quatre experiments plantejats se n'ha completat un, el
+de les estratègies de transferència, amb tres repeticions per configuració i un
+control que permet atribuir-ne el resultat. Els tres restants es basen en mesures
+per #f[frame] i requereixen resoldre prèviament la variància descrita a §6.1.
 
 == Experiments
 
-#todo[Dos o tres n'hi ha prou. Candidats, per ordre de valor:
+=== Búfer intermedi enfront d'escriptura directa
 
-+ *#f[Staging buffer] enfront d'escriptura directa sobre memòria unificada.*
-  Sobre GPU integrada, `DEVICE_LOCAL` i `HOST_VISIBLE` coincideixen, de manera
-  que la còpia intermèdia pot ser sobrecost pur. La mateixa especificació preveu
-  el cas d'un únic munt [VkSpec §3.2].
-+ *`max_frames_in_flight` a 1, 2 i 3.* Temps de #f[frame] enfront de latència
-  d'entrada.
-+ *Modes de presentació MAILBOX i FIFO.*
-+ *Reescriptura de descriptors cada #f[frame] enfront de reescriptura només quan
-  canvia `generation`.*
+==== Hipòtesi
 
-Els experiments s'executen sobre els dos equips de la @tab:maquinari, de manera
-que cada resultat es pot llegir en contrast entre una arquitectura de memòria
-unificada i una de separada.
+El patró de càrrega de recursos cap a memòria de dispositiu que la
+bibliografia descriu —reservar un búfer visible des de l'amfitrió, copiar-hi les
+dades, ordenar una còpia cap a un búfer local al dispositiu i destruir
+l'intermedi— parteix del supòsit que la memòria local al dispositiu no és
+accessible des del processador. Sobre una arquitectura de memòria unificada
+aquest supòsit pot no complir-se, cas en què la còpia intermèdia seria
+sobrecost prescindible.
 
-Cada un: hipòtesi, muntatge, gràfic, lectura. Un gràfic amb una lectura honesta
-val més que quatre gràfics sense.]
+==== Fonament
+
+Abans de mesurar res cal comprovar si el supòsit es compleix al
+maquinari emprat. El dispositiu de l'equip A exposa un únic munt d'11,48 GiB
+marcat com a local al dispositiu, i set tipus de memòria dels quals dos són
+alhora locals al dispositiu i visibles des de l'amfitrió. Es tracta,
+literalment, del cas que l'especificació preveu quan adverteix que en algunes
+arquitectures pot haver-hi un sol munt utilitzable per a qualsevol propòsit
+@vulkanspec. La còpia intermèdia, en aquest maquinari, copia memòria cap a una
+regió de la mateixa naturalesa.
+
+==== Muntatge
+
+S'ha afegit al motor un camí de càrrega alternatiu que, quan el
+búfer de destinació resideix en memòria visible des de l'amfitrió, hi escriu
+directament i evita tant la reserva intermèdia com l'ordre de còpia. L'elecció
+entre les dues estratègies es fa en temps d'execució. El motor no dona per fet
+que la memòria adequada existeixi: consulta els tipus disponibles i, si no en
+troba cap que sigui alhora local al dispositiu i visible des de l'amfitrió,
+retorna a la via del búfer intermedi i ho registra.
+
+Com a control s'utilitzen les càrregues de textures. Les imatges amb disposició
+òptima no es poden escriure directament, de manera que aquest camí continua
+emprant el búfer intermedi en totes dues configuracions. Qualsevol variació que
+hi aparegui és, per tant, atribuïble a la variabilitat entre execucions i no a
+l'estratègia.
+
+==== Resultats
+
+Cada execució efectua vuit càrregues de búfer i tres de textura.
+La @tab:staging recull les tres repeticions de cada configuració.
+
+#figure(
+  table(
+    columns: (auto, auto, auto, auto, auto, auto),
+    inset: 6pt,
+    align: (left, right, right, right, right, right),
+    stroke: 0.4pt + rgb("#ccc"),
+    table.header(
+      [*Estratègia*], [*Rep. 1*], [*Rep. 2*], [*Rep. 3*], [*Mitjana*], [*Interval*]),
+    table.cell(colspan: 6)[_Càrrega de búfers de geometria (8 operacions)_],
+    [Búfer intermedi], [7,024], [2,057], [6,678], [*5,253*], [2,06 -- 7,02],
+    [Escriptura directa], [0,079], [0,067], [0,064], [*0,070*], [0,064 -- 0,079],
+    table.cell(colspan: 6)[_Càrrega de textures (3 operacions) --- control_],
+    [Amb intermedi], [13,432], [10,720], [12,419], [*12,190*], [10,72 -- 13,43],
+    [Amb directa], [13,084], [12,631], [11,882], [*12,532*], [11,88 -- 13,08],
+  ),
+  caption: [Temps de càrrega de recursos, en mil·lisegons, segons l'estratègia
+    de transferència.],
+) <tab:staging>
+
+==== Lectura
+
+L'escriptura directa redueix el temps de càrrega de geometria de
+5,25 a 0,07 mil·lisegons, un factor aproximat de setanta-cinc. El control es
+manté pràcticament invariable —12,19 enfront de 12,53 mil·lisegons, una
+diferència del tres per cent, inferior a la dispersió del mateix control—, cosa
+que permet atribuir la millora a l'estratègia i no a la variabilitat entre
+execucions.
+
+La dispersió mereix una observació pròpia. La via amb búfer intermedi oscil·la
+entre 2,06 i 7,02 mil·lisegons, un factor de 3,4 entre el mínim i el màxim,
+mentre que la directa es manté entre 0,064 i 0,079, un marge del vint-i-tres per
+cent. La via directa no és només més ràpida sinó notablement més predictible,
+cosa coherent amb el fet que elimina una reserva de memòria, una ordre de còpia
+i una espera de cua, tres operacions el cost de les quals depèn de l'estat del
+sistema.
+
+==== Abast del resultat
+
+Convé delimitar què s'ha demostrat. Les càrregues mesurades
+succeeixen a l'arrencada, de manera que l'estalvi absolut és de cinc
+mil·lisegons una sola vegada en tota l'execució, magnitud irrellevant per a
+l'experiència d'ús. Les mesures per #f[frame] no mostren cap diferència
+atribuïble a la configuració, cosa esperada atès que no hi ha càrregues durant
+el bucle; la variància entre execucions descrita a la secció de metodologia és,
+a més, prou gran com perquè aquestes mesures no permetessin distingir-les
+encara que n'hi hagués.
+
+El valor del resultat no és, doncs, l'estalvi de temps sinó el que revela sobre
+el supòsit de partida: un patró que la bibliografia presenta com la manera
+correcta de transferir dades a la GPU resulta prescindible en una classe de
+maquinari molt estesa, i el motor ho pot determinar consultant el dispositiu en
+lloc de presuposar-ho.
+
+#todo[Aquest experiment està incomplet fins que s'executi sobre l'equip B, amb
+GPU dedicada. Allà s'espera que no existeixi cap tipus de memòria local al
+dispositiu i visible des de l'amfitrió, que el motor retorni automàticament a la
+via del búfer intermedi i que les dues configuracions donin el mateix resultat.
+Aquesta segona meitat és la que converteix l'experiment en una comparació entre
+arquitectures de memòria en lloc de la caracterització d'una sola.]
+
+#todo[Experiments restants per executar, per ordre de valor:
++ `max_frames_in_flight` a 1, 2 i 3.
++ Modes de presentació MAILBOX i FIFO.
++ Reescriptura de descriptors cada #f[frame] enfront de reescriptura gated per
+  `generation`.
+
+Abans d'executar-los cal resoldre la variància de les mesures per #f[frame]
+descrita a §6.1, ja que tots tres s'hi basen: caldrà descartar un període
+d'escalfament i allargar les execucions.]
 
 == Discussió
 
-#todo[Què signifiquen els resultats i què impliquen per al disseny del motor.
-Interessa especialment on el consell general de la literatura no s'ajusta al cas
-concret mesurat — per exemple, si la còpia intermèdia resulta innecessària sobre
-memòria unificada.]
+=== Un consell general que no s'aplica universalment
+
+El resultat principal d'aquest capítol no és que una via de transferència sigui
+setanta-cinc vegades més ràpida que una altra. És que el patró que la
+bibliografia presenta com la manera correcta de portar dades a la memòria del
+dispositiu resulta prescindible sobre una classe de maquinari molt estesa, i que
+el motor pot determinar-ho consultant el dispositiu en lloc de decidir-ho per
+endavant.
+
+El patró del búfer intermedi no és incorrecte: resol un problema real quan la
+memòria local al dispositiu no és accessible des de l'amfitrió, cosa que és certa
+en qualsevol GPU dedicada. El que la mesura mostra és que la seva necessitat és
+una propietat del maquinari i no del disseny, i que aplicar-lo incondicionalment
+—com feia el motor abans d'aquest treball, i com el descriuen la major part dels
+materials didàctics— significa pagar-ne el cost també quan no cal.
+
+=== La coherència amb el marc del capítol 2
+
+Aquest resultat tanca un argument que travessa la memòria sencera, i val la pena
+fer-lo explícit.
+
+El capítol 2 documentava que el trasllat de responsabilitat cap a l'aplicació és
+el principi fonamental d'aquesta generació d'API, i citava l'advertència que la
+documentació de Mantle ja feia el 2015: l'aplicació no ha de presuposar la
+visibilitat de la memòria sinó consultar les propietats que el sistema reporta
+@riguer2015. L'especificació de Vulkan recull el mateix i preveu explícitament
+el cas d'una arquitectura amb un únic munt utilitzable per a qualsevol propòsit
+@vulkanspec.
+
+El capítol 5 documentava quatre supòsits que el motor feia sobre el dispositiu i
+que no es complien sobre el maquinari d'aquest treball. Aquest capítol n'afegeix
+un cinquè, amb la diferència que aquest no produïa cap fallada visible: el motor
+funcionava correctament copiant memòria cap a una regió de la mateixa
+naturalesa, simplement hi dedicava temps innecessari.
+
+És, per tant, el cas més interessant dels cinc. Els quatre anteriors es van
+detectar perquè el motor no arrencava; aquest només es podia detectar mesurant.
+
+=== L'asimetria entre amfitrió i dispositiu
+
+La instrumentació de temps de dispositiu aporta una segona observació. A les sis
+execucions registrades, el temps que la GPU dedica a executar el treball d'una
+iteració no supera en cap cas el setze per cent del temps total d'aquesta
+iteració, i en la majoria se situa al voltant del cinc per cent.
+
+Convé ser precís sobre què significa aquesta xifra, perquè admet una lectura
+excessiva. El temps d'iteració no és temps de processament de l'amfitrió: inclou
+també l'espera de la tanca del #f[frame] lògic i l'adquisició de la imatge de
+presentació, operacions que bloquegen sense consumir processador. Afirmar a
+partir d'aquestes dades que el motor està limitat pel camí d'enviament seria,
+doncs, anar més enllà del que mesuren.
+
+El que sí que estableixen és que el dispositiu no és el factor limitant. Amb la
+càrrega gràfica actual —un cub texturat i un quadrilàter d'interfície— la GPU
+completa la feina molt abans que la iteració acabi, i el temps restant es
+reparteix entre treball de l'amfitrió i espera. Separar aquestes dues
+components requeriria instrumentar per separat les esperes de sincronització, i
+es recull com a treball pendent.
+
+Aquesta observació matisa la valoració de la limitació més rellevant del motor.
+Que el renderitzador enregistri en un sol fil d'execució és una mancança
+respecte del que l'API permet, però amb aquesta càrrega gràfica no és el que
+determina el rendiment observat. Adquiriria importància amb una escena que
+generés prou ordres com perquè l'enregistrament dominés la iteració, situació
+que aquest treball no arriba a plantejar.
 
 == Limitacions de l'avaluació
 
-#todo[Una sola màquina, un sol controlador, escena mínima. Reconèixer-ho
-enforteix la secció; amagar-ho la debilita si algú del tribunal ho pregunta.]
+L'avaluació presentada té un abast limitat i convé enunciar-lo amb precisió, ja
+que condiciona quines conclusions se'n poden extreure.
+
+/ Un sol equip: Totes les mesures provenen de l'equip A de la
+  @tab:maquinari. L'experiment està dissenyat per contrastar dues arquitectures
+  de memòria, però només se n'ha caracteritzat una. Fins que no s'executi sobre
+  l'equip B, el comportament esperat sobre GPU dedicada és una predicció i no un
+  resultat.
+
+/ Un sol controlador: Les xifres corresponen a una versió concreta d'un
+  controlador de codi obert. El repartiment de tipus de memòria i el cost de les
+  operacions de còpia són decisions d'implementació que poden variar entre
+  controladors del mateix fabricant.
+
+/ Escena mínima: La càrrega gràfica consisteix en un cub texturat i un
+  quadrilàter d'interfície. No és representativa de cap càrrega real, i les
+  conclusions sobre el repartiment de temps entre amfitrió i dispositiu només
+  valen per a aquest règim.
+
+/ Mesures per #f[frame] poc fiables: Com s'ha documentat a la secció de
+  metodologia, l'absència d'un període d'escalfament descartat i la durada curta
+  de les execucions produeixen una variància entre execucions superior a les
+  diferències que caldria distingir. Les conclusions d'aquest capítol es
+  recolzen, per tant, únicament en els acumuladors de vida sencera, que no
+  pateixen aquest problema.
+
+/ Un experiment de quatre: Dels quatre experiments plantejats només se n'ha
+  completat un. Els tres restants depenen de mesures per #f[frame] i, per tant,
+  de resoldre la limitació anterior.
+
+/ Confusió entre treball i espera: La secció que cronometra el renderitzat
+  engloba tant l'enregistrament d'ordres com les esperes de sincronització, que
+  són de naturalesa diferent. Mentre no se separin, qualsevol atribució del cost
+  a una de les dues és una hipòtesi.
+
+Cap d'aquestes limitacions afecta el resultat de l'experiment de transferència,
+que es recolza en acumuladors de vida sencera, en un control que es manté estable
+i en una diferència de dos ordres de magnitud. Sí que afecten, en canvi, l'abast
+de les afirmacions sobre rendiment general del motor, que en aquest capítol es
+limiten deliberadament al que les dades sostenen.
 
 // =============================================================================
 = Conclusions
@@ -1632,25 +2641,209 @@ enforteix la secció; amagar-ho la debilita si algú del tribunal ho pregunta.]
 
 == Conclusions del treball realitzat
 
-#todo[Tancar contra els objectius de §1.2, un per un.]
+El treball ha produït un motor de jocs funcional escrit en C, amb un
+renderitzador basat en Vulkan capaç de carregar geometria, textures i materials
+des de disc, il·luminar-los i dibuixar-los sobre dues plataformes. El balanç
+detallat dels objectius es recull al capítol 6; aquesta secció se centra en què
+ha establert el treball més enllà del producte.
+
+=== L'API imposa l'arquitectura
+
+La tesi que travessa la memòria és que la forma d'un motor de jocs modern no és
+majoritàriament una qüestió de gust, sinó que està determinada per la naturalesa
+de l'API sobre la qual es construeix. El capítol 2 l'enuncia a partir de les
+fonts: com que Vulkan trasllada a l'aplicació la gestió de riscos d'accés, la
+sincronització i l'assignació de memòria, qualsevol motor construït al damunt
+necessita un assignador, un model explícit de ritme de #f[frames] i un sistema
+de recursos propi.
+
+El desenvolupament ho ha confirmat en la pràctica. Els tres subsistemes que
+ocupen més espai al capítol 5 són exactament aquests tres, i cap d'ells no
+respon a una preferència de disseny sinó a una obligació que l'API imposa. La
+correspondència entre el que les fonts prediuen i el que el motor ha necessitat
+és, per tant, un resultat i no una coincidència.
+
+=== Fonts independents que convergeixen
+
+Un segon resultat, menys previsible, és la freqüència amb què les dues fonts
+principals arriben a la mateixa solució per camins diferents.
+
+El cas més clar és el patró d'inicialització dels subsistemes. La bibliografia
+d'arquitectura de motors recomana un ordre d'arrencada explícit perquè els
+mecanismes implícits del llenguatge no són fiables @gregory2018; l'API imposa
+un dimensionament explícit perquè no reserva memòria en nom de l'aplicació
+@vulkanspec. Cap de les dues parla de l'altra, i el patró que el motor fa
+servir és la composició d'ambdues.
+
+El mateix passa amb l'ordenació dels recursos de #f[shader] per freqüència
+d'actualització, que la bibliografia recomana per raons de rendiment anteriors a
+Vulkan @gregory2018 i que l'especificació recomana per raons relatives a la
+invalidació de conjunts de descriptors @vulkanspec. Aquesta convergència
+suggereix que una part considerable de l'estructura d'un motor no és
+negociable.
+
+=== Consultar en lloc de presuposar
+
+El treball ha produït cinc casos del mateix error, i la seva acumulació
+constitueix probablement la lliçó tècnica més transferible que se n'extreu.
+
+Quatre d'ells —selecció de dispositiu, extensió de la superfície, dimensionament
+de recursos per imatge i límit de filtratge anisotròpic— van impedir que el
+motor s'executés sobre el maquinari d'aquest treball, i es detallen a §5.3. El
+cinquè, la còpia intermèdia innecessària sobre memòria unificada, no impedia res:
+només consumia temps, i per això només es podia detectar mesurant.
+
+Tots cinc comparteixen la mateixa causa: un valor escrit al codi en lloc de
+consultat al dispositiu. És, literalment, l'advertència que la documentació de
+Mantle feia el 2015 @riguer2015 i que l'especificació de Vulkan manté
+@vulkanspec. Haver-la trobat cinc vegades de manera independent li dona un pes
+que llegir-la no li donava.
+
+=== Seguir una referència i estudiar les fonts no són el mateix
+
+El treball s'ha construït sobre una implementació de referència, pràctica que el
+capítol 2 documenta com a habitual en el desenvolupament de motors
+@gregory2018. Aquesta decisió, declarada al capítol 3, ha permès abastar en el
+temps disponible un conjunt de subsistemes que difícilment s'hauria assolit
+partint de zero.
+
+Ara bé, l'estudi paral·lel de les fonts primàries ha produït dos casos en què el
+resultat difereix del que s'hauria escrit seguint únicament la referència. El
+primer és l'argument sobre l'elecció del llenguatge de §4.2, on la font que es
+pretenia citar afirma el contrari del que se li volia atribuir, cosa que va
+obligar a substituir l'argument per un altre. El segon és l'experiment de §6.3,
+on una pràctica que tots els materials consultats presenten com a correcta
+resulta prescindible sobre el maquinari emprat.
+
+Cap dels dos s'hauria produït reproduint codi. Constitueixen, per tant,
+l'evidència més directa que el mètode descrit al capítol 3 —seguir una
+referència i contrastar-la amb les fonts— dona un resultat diferent de seguir-la
+sense més.
 
 == Punts forts i punts febles
 
-#todo[Exigit per la plantilla. Els punts febles escrits per un mateix són el
-senyal més fort de comprensió que es pot donar — i desactiven la meitat de les
-preguntes hostils possibles.]
+=== Punts forts
+
+/ Decisions documentades amb el seu cost: Cada decisió estructural del capítol 4
+  enuncia les alternatives considerades, el criteri aplicat i què s'hi va
+  perdre. Aquesta última part hi consta sempre, inclosa la fuita reconeguda del
+  renderitzador i les tres limitacions del model de memòria.
+
+/ Adaptació a maquinari no previst: Els quatre supòsits corregits a §5.3 són
+  treball de diagnòstic independent, no reproduït de cap material, i van exigir
+  distingir què garanteix l'API de què deixa a criteri de la implementació.
+
+/ Instrumentació pròpia: Tot el capítol 6 es recolza en una capa de mesura
+  escrita per al projecte, incloent-hi la mesura de temps de dispositiu, sense
+  recórrer a cap eina externa.
+
+/ Un resultat empíric amb valor propi: L'experiment de transferència contradiu
+  una pràctica establerta sobre una classe de maquinari molt estesa, amb un
+  control que permet atribuir-ne el resultat.
+
+/ Delimitació honesta de l'abast: Tant el capítol 6 com aquest distingeixen
+  quines afirmacions sostenen les dades i quines no, en lloc d'agrupar totes les
+  limitacions indistintament.
+
+=== Punts febles
+
+/ Proporció del treball derivat: La major part dels subsistemes segueixen
+  l'estructura de la implementació de referència. El treball propi hi consisteix
+  a haver-los comprès, integrats, depurats i documentats, no a haver-los
+  concebut, i el capítol 3 ho delimita explícitament.
+
+/ Avaluació incompleta: S'ha completat un dels quatre experiments plantejats, i
+  sobre un dels dos equips disponibles. L'avaluació caracteritza una arquitectura
+  de memòria en lloc de contrastar-ne dues, que era el disseny previst.
+
+/ Instrument de mesura millorable: L'absència d'un període d'escalfament
+  descartat inutilitza les mesures per #f[frame] per a distincions fines, i és
+  precisament el que bloqueja els tres experiments restants.
+
+/ Documentació tècnica desactualitzada: El corpus de documents del repositori,
+  que el capítol 3 presenta com a part del mètode, no recull les ampliacions més
+  recents i descriu mòduls que la reorganització de passades va eliminar.
+
+/ Cobertura de proves reduïda: Les proves unitàries cobreixen únicament
+  l'assignador lineal i la taula de dispersió. La resta del motor es verifica per
+  execució, cosa que detecta regressions visibles però no silencioses.
 
 == Limitacions
 
-#todo[Un sol fil d'execució, un sol #f[render pass], sense alineació a
-l'assignador, geometria limitada. Les seccions «Known limitations» de `docs/`
-ja contenen aquest material.]
+Més enllà de la qualitat del treball realitzat, el motor té limitacions
+estructurals que en delimiten l'abast. Es recullen aquí les que es consideren
+rellevants, totes documentades al lloc corresponent.
+
+/ Un sol fil d'execució: L'enregistrament d'ordres es fa íntegrament en un fil.
+  L'API està dissenyada per permetre'n l'enregistrament paral·lel i especifica
+  quins objectes requereixen sincronització externa per fer-ho possible
+  @vulkanspec; el motor no ho aprofita. És la limitació més rellevant respecte
+  del que l'API ofereix, si bé les mesures de §6.4 indiquen que amb la càrrega
+  gràfica actual no és el que determina el rendiment observat.
+
+/ Absència de representació d'escena: El paquet de renderitzat es construeix amb
+  geometries fixes al codi de l'aplicació. No hi ha jerarquia d'objectes, ni
+  descart per visibilitat, ni ordenació de la feina de dibuix.
+
+/ Gestió de memòria de dispositiu elemental: Els búfers de geometria es reserven
+  en blocs grans i fixos sense subassignador, de manera que el motor no pot
+  alliberar ni reutilitzar regions de manera selectiva.
+
+/ Assignadors sense alineació: Cap dels dos assignadors de l'amfitrió alinea les
+  reserves, i el comptador d'ocupació no comptabilitza els dos blocs reservats
+  abans de la seva inicialització.
+
+/ Unificació parcial de recursos: El sistema de recursos unifica la localització
+  i la càrrega, però tres subsistemes mantenen cadascun la seva taula de
+  referències i la seva política d'alliberament.
+
+/ Il·luminació mínima: Una sola llum direccional, sense llums puntuals, sense
+  ombres i amb l'exponent especular fixat al #f[shader] en lloc de formar part
+  del material. La transformació de normals empra la submatriu del model, cosa
+  que deixaria de ser correcta amb escalat no uniforme.
 
 == Línies de continuació
 
-#todo[Sistema de tasques concurrents, cua de renderitzat, subassignador de
-memòria de GPU, sistema de recursos genèric. Cada una amb la font que en
-descriu el disseny.]
+Les línies següents s'enuncien per ordre de prioritat, entenent com a tal la
+relació entre el que aporten i el que costen.
+
++ *Completar l'avaluació.* Executar l'experiment de transferència sobre l'equip
+  amb GPU dedicada. És la meitat que converteix l'avaluació en una comparació
+  entre arquitectures, i no requereix cap codi nou: el motor ja selecciona
+  l'estratègia consultant el dispositiu.
+
++ *Sanejar l'instrument de mesura.* Descartar un període d'escalfament, allargar
+  les execucions i separar l'enregistrament d'ordres de les esperes de
+  sincronització. Desbloqueja els tres experiments pendents i elimina la
+  confusió entre treball i espera assenyalada a §6.4.
+
++ *Sistema de tasques concurrents.* És el canvi estructural de més abast
+  disponible i el que més aprofitaria el disseny de l'API. La bibliografia en
+  descriu l'arquitectura @gregory2018 i l'especificació precisa quins objectes
+  requereixen sincronització externa @vulkanspec.
+
++ *Cua de renderitzat i representació d'escena.* Substituir el paquet fix per
+  una llista de parells de malla i material, ordenable per minimitzar canvis
+  d'estat @gregory2018. És el requisit previ de qualsevol escena no trivial.
+
++ *Subassignador de memòria de dispositiu.* Repartir les reserves grans que el
+  motor ja fa, tal com recomana la documentació de referència @riguer2015.
+
++ *Assignador de #f[frame].* Afegir marcadors i retorn a l'assignador lineal per
+  obtenir l'assignador de #f[frame] que la bibliografia descriu @gregory2018, i
+  reiniciar-lo a cada iteració.
+
++ *Completar la unificació de recursos.* Traslladar el recompte de referències i
+  la identificació per nom al sistema de recursos, de manera que els sistemes
+  especialitzats només aportin la interpretació de cada tipus.
+
++ *Alineació als assignadors* i correcció del punt cec del comptador
+  d'ocupació. Són canvis petits amb efecte sobre la correcció i sobre la
+  fiabilitat de les mesures.
+
+#todo[Revisar aquest ordre abans d'entregar. Si entremig s'han completat la
+primera o la segona línia, cal moure-les a la secció de resultats i reordenar la
+resta.]
 
 // =============================================================================
 #heading(numbering: none)[Referències]
