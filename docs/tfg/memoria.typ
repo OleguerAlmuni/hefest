@@ -1178,6 +1178,40 @@ desenvolupament. La documentació tècnica del projecte es manté en format Mark
 dins del mateix repositori, i aquesta memòria s'ha redactat amb Typst 0.15.1.
 L'anàlisi del codi durant el desenvolupament s'ha recolzat en `clangd`.
 
+=== Ús d'eines d'intel·ligència artificial
+
+S'han emprat assistents basats en models de llenguatge durant el
+desenvolupament i la redacció, i convé declarar-ne l'ús amb precisió: no és el
+mateix delegar-hi una decisió que fer-los servir per a una tasca acotada. Els
+usos han estat els següents.
+
+/ Diagnòstic de defectes: En diversos punts del desenvolupament, el sistema de
+  registre del motor no va arribar a capturar la causa d'un defecte, o la va
+  descriure d'una manera que no permetia identificar-la amb facilitat. En aquests
+  casos s'ha recorregut a aquestes eines per acotar-ne l'origen a partir del
+  codi i del comportament observat. La correcció i la seva comprovació s'han fet
+  sempre sobre el motor en execució.
+
+/ Ordenació de les referències: S'han fet servir per mantenir coherent l'aparell
+  de citacions al llarg de la memòria, comprovar que cada entrada de la
+  bibliografia es citava efectivament al text i verificar les dades de les
+  entrades.
+
+/ Revisió lingüística: S'han emprat per revisar l'ortografia i la gramàtica del
+  text i, sobretot, per assenyalar els punts on el registre o la terminologia
+  variaven entre seccions, cosa difícil de detectar rellegint un document
+  d'aquesta extensió.
+
+/ Automatització de les mesures: Els #f[scripts] que executen les repeticions de
+  l'experiment del capítol 6 i en recullen la sortida s'han generat amb aquestes
+  eines. No formen part del motor i no intervenen en el que es mesura: només
+  llancen el binari amb cada configuració i desen els registres.
+
+Les decisions de disseny del capítol 4, la interpretació de les fonts i
+l'anàlisi dels resultats del capítol 6 no s'hi deleguen: són responsabilitat de
+qui signa el treball, i l'Annex A en manté la traça fins a la font primària i
+fins al codi que les implementa.
+
 === Maquinari de desenvolupament
 
 L'entorn de desenvolupament i de mesura es detalla a la @tab:maquinari. Les seves
@@ -3663,6 +3697,12 @@ recullen a l'inventari de §5.5 i la seva procedència es delimita al capítol 3
 Aquest annex recull el que cal per compilar i executar el motor sobre les dues
 plataformes en què s'ha desenvolupat. La informació es manté també al fitxer
 `README.md` del repositori.
+
+El codi font complet, la documentació tècnica dels subsistemes i l'historial de
+#f[commits] que el capítol 3 pren com a registre cronològic del desenvolupament
+són accessibles a:
+
+#align(center)[`https://github.com/OleguerAlmuni/hefest`]
 
 === Requisits comuns
 
