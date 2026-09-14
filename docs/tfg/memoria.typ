@@ -3149,43 +3149,214 @@ invalidació de conjunts de descriptors @vulkanspec. Aquesta convergència
 suggereix que una part considerable de l'estructura d'un motor no és
 negociable.
 
-=== Consultar en lloc de presuposar
+=== El cost de l'explicitud i on surt a compte
 
-El treball ha produït cinc casos del mateix error, i la seva acumulació
-constitueix probablement la lliçó tècnica més transferible que se n'extreu.
+Les dues seccions anteriors estableixen que l'API determina l'arquitectura. La
+pregunta que se'n deriva, i que és la més útil per a qui hagi de prendre la
+mateixa decisió, és una altra: què costa aquesta determinació i què s'hi guanya
+a canvi. El treball permet respondre-la amb dades pròpies en lloc d'amb
+expectatives.
+
+==== Què costa
+
+El cost és mesurable en codi. La @tab:loc en recull el repartiment, comptant les
+línies no buides dels fitxers font del motor i excloent-ne el codi de tercers.
+
+// Aquesta taula cap en una pàgina; si es trenca, el títol queda orfe.
+#[
+#show figure.where(kind: table): set block(breakable: false)
+#figure(
+  table(
+    columns: (1fr, auto, auto),
+    inset: 6pt,
+    align: (left, right, right),
+    stroke: 0.4pt + rgb("#ccc"),
+    table.header([*Àrea*], [*Línies*], [*Proporció*]),
+    [Renderitzador, part específica de Vulkan], [2.895], [27,8 %],
+    [Sistemes bàsics], [2.032], [19,5 %],
+    [Matemàtiques], [1.267], [12,2 %],
+    [Sistemes especialitzats], [1.177], [11,3 %],
+    [Plataforma], [1.076], [10,3 %],
+    [Renderitzador, part independent de l'API], [997], [9,6 %],
+    [Recursos], [406], [3,9 %],
+    [Contenidors], [338], [3,3 %],
+    [Punt d'entrada i assignadors], [211], [2,0 %],
+    [*Total*], [*10.399*], [*100 %*],
+  ),
+  caption: [Distribució del codi propi del motor per àrea, en línies no buides
+    de fitxers `.c` i `.h`. No s'hi comptabilitzen les 7.015 línies del
+    descodificador d'imatges de tercers que el motor incorpora.],
+) <tab:loc>
+]
+
+Més d'una quarta part del codi del motor és, doncs, específica de Vulkan, i el
+renderitzador sencer n'ocupa el trenta-set per cent. Aquestes 2.895 línies
+contenen 161 crides a l'API, 22 funcions de creació d'objectes diferents i 42
+estructures de descripció que cal omplir camp a camp abans de cada creació.
+
+La xifra en codi, però, no és el cost complet. Tres dels onze subsistemes del
+motor —l'assignador, el model de ritme de #f[frames] i el sistema de recursos—
+existeixen perquè l'API no els proporciona, tal com argumenta la primera secció
+d'aquest capítol. El cost real inclou, doncs, també el temps d'entendre per què
+calen i què han de garantir, que el pressupost del capítol 3 situa en la partida
+més gran de les nou.
+
+Convé subratllar la propietat que fa aquest cost incòmode: és fix. No es paga en
+proporció a l'ambició del motor, sinó abans de dibuixar el primer triangle.
+Presentar una imatge a la pantalla exigeix cadena d'intercanvi, passada de
+renderitzat, canonada gràfica, conjunts de descriptors, tanques i semàfors,
+tinguin el motor dos objectes o dos-cents mil.
+
+==== Què s'hi guanya, segons les fonts
+
+El benefici que la bibliografia atribueix al model explícit és específic i està
+quantificat. El cost dominant del model clàssic és el treball que el controlador
+fa per cada ordre de dibuix, de manera que la millora apareix en escenes
+limitades per aquest treball, on es va mesurar en un factor d'entre cinc i
+quinze @everitt2014. A aquest se n'hi suma un segon: l'enregistrament d'ordres
+es pot repartir entre fils, cosa que el model clàssic no permetia @vulkanspec.
+
+Cap dels dos no s'aplica a aquest motor. El renderitzador enregistra en un sol
+fil, tal com recull la secció de limitacions, i l'escena consta de dues crides
+de dibuix per iteració: una geometria de món i un quadrilàter d'interfície. El
+criteri que les mateixes fonts proposen situa aquest motor, per tant, lluny del
+règim on el model clàssic era el límit.
+
+Les mesures ho confirmen en lloc de deixar-ho com a raonament. El temps que el
+dispositiu dedica a executar una iteració no supera el setze per cent del temps
+total d'aquesta iteració i se situa habitualment al voltant del cinc per cent
+(§6.4). El motor no està esperant la GPU, de manera que el benefici que la
+bibliografia anuncia no tenia marge on manifestar-se.
+
+==== Què s'hi ha guanyat realment
+
+Hi ha, en canvi, un eix on l'explicitud ha donat un resultat gran, i no és el que
+els materials consultats posen al davant. Poder consultar els tipus de memòria
+que el dispositiu exposa i triar l'estratègia de transferència en conseqüència
+redueix el temps de càrrega de geometria en un factor de cent trenta-sis a
+l'equip de memòria unificada i de dos-cents vuitanta-dos al de GPU dedicada
+(§6.3).
+
+Aquesta millora té dues propietats que la fan rellevant per a la pregunta
+d'aquesta secció. La primera és que no depèn de l'ambició del motor: apareix amb
+dues geometries igual que n'apareixeria amb dues mil, perquè el que mesura és el
+camí de transferència i no la càrrega gràfica. La segona és que cap API que
+amagui la ubicació de la memòria no la pot oferir, perquè la decisió que la
+produeix —escriure directament en memòria local al dispositiu quan n'hi ha de
+visible des de l'amfitrió— no existeix com a opció si el controlador la pren pel
+seu compte.
+
+==== El criteri que se'n desprèn
+
+La resposta a la pregunta inicial és, doncs, asimètrica, i aquesta asimetria és
+el resultat més útil del treball per a qui hagi de decidir.
+
+El cost de l'explicitud és fix i es paga per endavant. El benefici que la
+bibliografia anuncia —reducció del treball del controlador i enregistrament
+paral·lel— és proporcional a l'ambició del motor i, per sota d'un determinat
+volum d'ordres de dibuix, senzillament no arriba. Un motor petit paga, per tant,
+la totalitat del cost a canvi de cap de les dues millores amb què l'API es
+justifica habitualment.
+
+El benefici del control sobre la ubicació de les dades, en canvi, no és
+proporcional a res: apareix complet des del primer actiu que es carrega. És
+l'únic dels tres que un motor de l'abast d'aquest pot cobrar.
+
+D'això se'n segueix un criteri concret. La pregunta pertinent abans d'adoptar
+una API explícita no és quantes ordres de dibuix tindrà l'escena, que és la que
+la bibliografia suggereix, sinó si el projecte necessita decidir on resideixen
+les seves dades. Per a un motor petit, l'argument de rendiment per #f[frame] no
+se sosté; l'argument de control sobre la memòria sí.
+
+Queda una raó que no és tècnica i que en aquest treball és decisiva. Quan
+l'objectiu és entendre com funciona un motor, el cost de l'explicitud no és un
+preu sinó el contingut: són precisament les responsabilitats que l'API delega
+les que es volien estudiar, i una API que les amagués hauria fet el treball
+impossible. Això justifica l'elecció per a aquest projecte sense estendre-la a
+projectes amb un altre objectiu.
+
+=== L'explicitud desplaça la portabilitat a l'aplicació
+
+El treball ha produït cinc casos del mateix error, i la seva acumulació permet
+enunciar una conseqüència del model explícit que les fonts no destaquen tant com
+el rendiment.
 
 Quatre d'ells —selecció de dispositiu, extensió de la superfície, dimensionament
 de recursos per imatge i límit de filtratge anisotròpic— van impedir que el
 motor s'executés sobre el maquinari d'aquest treball, i es detallen a §5.3. El
-cinquè, la còpia intermèdia innecessària sobre memòria unificada, no impedia res:
-només consumia temps, i per això només es podia detectar mesurant.
+cinquè, la còpia intermèdia innecessària sobre memòria unificada, no impedia
+res: només consumia temps, i per això només es podia detectar mesurant.
 
 Tots cinc comparteixen la mateixa causa: un valor escrit al codi en lloc de
-consultat al dispositiu. És, literalment, l'advertència que la documentació de
-Mantle feia el 2015 @riguer2015 i que l'especificació de Vulkan manté
-@vulkanspec. Haver-la trobat cinc vegades de manera independent li dona un pes
-que llegir-la no li donava.
+consultat al dispositiu. Enunciat així sembla una qüestió de disciplina, i no
+ho és. En el model clàssic, aquests cinc valors els decidia el controlador, que
+els ajustava a cada dispositiu sense que l'aplicació ho sabés; aquella capa
+d'indirecció era, alhora, el cost que el model explícit elimina i el mecanisme
+que feia portable el codi de l'aplicació. Suprimir-la trasllada la
+responsabilitat sencera, no només la part que interessa.
 
-=== Seguir una referència i estudiar les fonts no són el mateix
+La conseqüència pràctica és que el preu del control no es cobra en temps de
+desenvolupament de l'escena sinó en enginyeria de portabilitat, i es cobra sobre
+maquinari que qui escriu el codi no té. Els quatre primers casos eren correctes
+a la màquina on es van escriure i van fallar a la primera màquina diferent. La
+documentació de Mantle ja ho advertia el 2015 @riguer2015 i l'especificació de
+Vulkan ho manté @vulkanspec; haver-ho trobat cinc vegades de manera independent
+li dona un pes que llegir-ho no li donava.
+
+=== Una implementació de referència transmet també el seu entorn
 
 El treball s'ha construït sobre una implementació de referència, pràctica que el
 capítol 2 documenta com a habitual en el desenvolupament de motors
 @gregory2018. Aquesta decisió, declarada al capítol 3, ha permès abastar en el
 temps disponible un conjunt de subsistemes que difícilment s'hauria assolit
-partint de zero.
+partint de zero. Que aquesta manera de treballar sigui legítima no és, però,
+cap resultat: el capítol 3 ja la justifica i ningú no la discuteix.
 
-Ara bé, l'estudi paral·lel de les fonts primàries ha produït dos casos en què el
-resultat difereix del que s'hauria escrit seguint únicament la referència. El
-primer és l'argument sobre l'elecció del llenguatge de §4.2, on la font que es
-pretenia citar afirma el contrari del que se li volia atribuir, cosa que va
-obligar a substituir l'argument per un altre. El segon és l'experiment de §6.3,
-on una pràctica que tots els materials consultats presenten com a correcta
-resulta prescindible sobre el maquinari emprat.
+El resultat és un altre, i és menys evident. Els quatre supòsits sobre el
+dispositiu de la secció anterior no eren errors de la implementació de
+referència: eren certs a la màquina del seu autor. El codi els expressava amb
+la mateixa forma amb què expressa les decisions de disseny, de manera que res no
+els distingia d'aquestes fins que van fallar. Una implementació de referència
+transmet, doncs, dues coses alhora: una arquitectura i un entorn d'execució, i
+només la primera és explícita.
 
-Cap dels dos s'hauria produït reproduint codi. Constitueixen, per tant,
-l'evidència més directa que el mètode descrit al capítol 3 —seguir una
-referència i contrastar-la amb les fonts— dona un resultat diferent de seguir-la
-sense més.
+D'aquí se'n deriva el criteri metodològic que el treball ha acabat aplicant, i
+que és més precís que el que el capítol 3 enunciava en començar: el contrast amb
+les fonts primàries no serveix per validar l'arquitectura que la referència
+proposa, que és sòlida, sinó per separar-ne el que l'API garanteix del que
+simplement era cert en un lloc concret. Els dos casos en què l'estudi de les
+fonts va modificar una conclusió ho il·lustren. El primer és l'argument sobre
+l'elecció del llenguatge de §4.2, on la font que es pretenia citar afirma el
+contrari del que se li volia atribuir. El segon és l'experiment de §6.3, on una
+pràctica que tots els materials consultats presenten com a correcta resulta
+prescindible sobre el maquinari emprat. Cap dels dos no s'hauria produït
+reproduint codi.
+
+=== Sobre construir l'instrument
+
+El capítol 1 planteja, com a motivació, una consideració sobre el mitjà: que al
+videojoc, a diferència de gairebé qualsevol altra disciplina creativa, qui
+concep l'obra sovint està capacitat per construir també l'instrument. Convé
+tancar-la amb el que el treball permet dir-ne, que és menys del que la motivació
+esperava i més concret.
+
+Les prop de quatre-centes hores que el capítol 3 comptabilitza han produït
+un motor capaç de carregar
+geometria, textures i materials des de disc, il·luminar-los amb una llum
+direccional i dibuixar-los sobre dues plataformes. La distància respecte de
+qualsevol motor comercial no és de grau sinó d'ordre de magnitud, i la secció de
+limitacions d'aquest capítol l'enumera sense estalviar-se'n cap.
+
+La conclusió honesta, per tant, no és que construir l'instrument sigui una
+alternativa a fer-lo servir. És que són activitats amb objectius diferents, i
+que el valor de la primera no s'ha de mesurar amb la vara de la segona. El que
+aquest treball ha produït que un motor comercial no hauria produït no és el
+programa, sinó saber per què el bucle principal té les fases que té, on és la
+memòria de cada actiu i què passa quan el maquinari no és el previst. Vist així,
+la separació entre l'instrument i l'obra que el capítol 1 lamenta no és un
+problema a resoldre sinó una divisió del treball raonable, amb l'excepció que
+qui la travessa hi guanya un coneixement del mitjà que no s'obté de cap altra
+manera.
 
 == Punts forts i punts febles
 
