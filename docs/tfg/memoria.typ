@@ -63,9 +63,6 @@
   block(above: 0em, below: 1.2em, text(size: 17pt, weight: "bold", it))
 }
 
-// Marca visual per a text pendent d'escriure. Esborrar abans d'entregar.
-#let todo(x) = text(fill: rgb("#b03030"))[#emph[[#x]]]
-
 // Dades de portada. La disposició reprodueix la plantilla oficial de l'escola.
 #let nom-autor = [Oleguer Almuni i Orra]
 #let nom-ponent = [Ferran Ruiz Sala]
@@ -137,7 +134,12 @@ resultats diferents; el treball documenta dos casos en què l'estudi de les font
 va modificar conclusions que s'haurien mantingut altrament.
 
 #heading(numbering: none, outlined: false)[Agraïments]
-#todo[Opcional segons la plantilla.]
+
+A la meva germana, a la meva mare i al meu pare.
+
+Aquest treball s'ha fet en gran part fora de l'horari laboral, en caps de
+setmana i durant un estiu sencer. Que això fos possible no depenia només de
+mi, i tots tres ho van fer fàcil sense haver-ho de dir.
 
 #pagebreak()
 
@@ -981,10 +983,6 @@ verificables a l'historial del repositori.
   servir.
 
 / Avaluació empírica: El disseny experimental i les mesures del capítol 6.
-
-#todo[Ampliar aquesta llista si s'implementa l'assignador de #f[frame] amb
-marcadors descrit a @gregory2018, que ara mateix consta com a línia de
-continuació al capítol 7.]
 
 === Delimitació
 
@@ -3308,10 +3306,6 @@ relació entre el que aporten i el que costen.
 
 + *Alineació als assignadors i comprovació del punter nul.* Són canvis petits
   amb efecte directe sobre la correcció.
-
-#todo[Revisar aquest ordre abans d'entregar. Si entremig s'han completat la
-primera o la segona línia, cal moure-les a la secció de resultats i reordenar la
-resta.]
 
 // =============================================================================
 #heading(numbering: none)[Referències]
