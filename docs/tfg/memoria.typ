@@ -306,13 +306,11 @@ dels quals té una resposta explícita al capítol de resultats:
 + Avaluar empíricament un conjunt de decisions del renderitzador i quantificar
   l'impacte de cadascuna.
 
-Cadascun d'aquests objectius té una resposta explícita i comprovable a la secció
-corresponent del capítol 6.
 
 == Abast
 
 El treball comprèn el desenvolupament de les capes fonamentals d'un motor de
-jocs i d'un renderitzador funcional, tal com s'ha delimitat a la
+jocs i d'un renderitzador funcional, tal com es delimita a la
 @tab:capes: capa de plataforma, sistemes bàsics, gestió de recursos,
 renderitzador i tractament de dispositius d'entrada. Inclou igualment la
 documentació tècnica del disseny i l'avaluació empírica del comportament del
@@ -349,7 +347,7 @@ El document segueix l'ordre en què es va desenvolupar el treball: primer el mar
 que el fonamenta, després el mètode, les decisions, la implementació i
 finalment l'avaluació.
 
-El *capítol 2* estableix el marc conceptual. Presenta l'estructura en capes d'un
+El capítol 2 estableix el marc conceptual. Presenta l'estructura en capes d'un
 motor de jocs i, sobretot, explica per què existeix Vulkan: quins límits del
 model gràfic anterior el van motivar, quin intent es va fer de resoldre'ls sense
 trencar-lo i quin principi governa l'API resultant. Aquesta darrera part no és
@@ -358,40 +356,40 @@ la manera com l'API reparteix responsabilitats determina quins subsistemes ha de
 tenir qualsevol motor construït al damunt. El capítol es tanca situant el treball
 respecte dels motors existents i dels projectes que li han servit de referència.
 
-El *capítol 3* descriu el mètode. Detalla com s'ha organitzat el
+El capítol 3 descriu el mètode. Detalla com s'ha organitzat el
 desenvolupament, com s'ha verificat i quin paper hi ha tingut la documentació
 tècnica. Inclou una secció dedicada a la procedència de les fonts, que delimita
 amb precisió què s'ha pres d'una implementació de referència i què constitueix
 aportació pròpia. Es completa amb la planificació temporal i amb la descripció de
 l'entorn de desenvolupament i de mesura.
 
-El *capítol 4* recull les sis decisions estructurals del motor: l'API gràfica, el
+El capítol 4 recull les sis decisions estructurals del motor: l'API gràfica, el
 llenguatge, el repartiment del control del flux, la gestió de memòria, la
 frontera entre la part independent de l'API i la seva implementació, i el model
 de recursos. Cadascuna s'exposa amb la mateixa estructura —problema,
 alternatives, criteri i cost— i es fonamenta en la font corresponent.
 
-El *capítol 5* descriu com s'han implementat aquestes decisions. Tracta en
+El capítol 5 descriu com s'han implementat aquestes decisions. Tracta en
 profunditat l'arquitectura general i el cicle d'un #f[frame], la gestió de
 memòria i la instrumentació, la sincronització entre processador i dispositiu, i
 els sistemes de recursos; la resta de subsistemes s'hi recullen en un inventari.
 La secció dedicada a la sincronització inclou els supòsits sobre el maquinari que
 va caldre corregir perquè el motor s'executés sobre l'entorn d'aquest treball.
 
-El *capítol 6* presenta l'avaluació. Comença explicitant què mesura la
+El capítol 6 presenta l'avaluació. Comença explicitant què mesura la
 instrumentació i quines limitacions té, atès que d'això depèn quines afirmacions
 poden sostenir-se. Segueix amb el balanç dels objectius, l'experiment sobre
 estratègies de transferència de dades cap a la memòria del dispositiu, la
 discussió dels resultats i la delimitació del seu abast.
 
-El *capítol 7* recull les conclusions, els punts forts i febles del treball, les
+El capítol 7 recull les conclusions, els punts forts i febles del treball, les
 limitacions del motor resultant i les línies de continuació, ordenades segons la
 relació entre el que aporten i el que costen.
 
-Els *annexos* contenen el material de consulta: la correspondència detallada
-entre les decisions de disseny i les fonts que les fonamenten, les instruccions
-de compilació i execució, la referència de la interfície pública dels
-subsistemes, els resultats complets de les mesures i la planificació detallada.
+Els annexos contenen el material de consulta: la correspondència detallada
+entre les decisions de disseny, les fonts que les fonamenten i el codi que les
+implementa; les instruccions de compilació i execució sobre les dues
+plataformes; i els registres crus de les mesures del capítol 6.
 
 // =============================================================================
 = Estat de l'art i marc tecnològic
@@ -409,7 +407,7 @@ verificació i n'impedeix la reutilització.
 Aquest principi no és una consideració merament teòrica. En un motor com el que
 es descriu en aquest treball, determina l'ordre en què els subsistemes s'han
 d'inicialitzar i, per tant, condiciona directament el disseny de la seqüència
-d'arrencada que es tracta al capítol 4.
+d'arrencada que es tracta als capítols 4 i 5.
 
 === Les capes d'un motor 3D típic
 
@@ -824,9 +822,9 @@ teòric al llarg de tot el treball: #obra[Game Engine Architecture]
 El desenvolupament s'ha organitzat de manera incremental per subsistemes. Cada
 subsistema s'ha portat fins a un estat funcional, s'ha integrat amb els
 anteriors i se n'ha documentat el disseny abans de començar el següent. El
-resultat és un historial de 38 #f[commits] repartits entre l'agost de 2025 i el
-juny de 2026, en què cada un correspon a una unitat de treball coherent i
-identificable.
+resultat és un historial d'una cinquantena de #f[commits] sobre el codi,
+repartits entre l'agost de 2025 i el setembre de 2026, en què cada un correspon
+a una unitat de treball coherent i identificable.
 
 L'ordre d'aquesta incorporació no és arbitrari. L'estructura en capes descrita a
 la @fig:capes imposa un ordre de dependències que en determina bona part: no es
@@ -838,7 +836,7 @@ verificació empírica contínua.
 
 === Fases del desenvolupament
 
-Retrospectivament, el treball s'agrupa en tres fases amb caràcter metodològic
+Retrospectivament, el treball s'agrupa en quatre fases amb caràcter metodològic
 diferenciat, recollides a la @tab:fases.
 
 #figure(
@@ -905,9 +903,9 @@ gràfic. Aquesta limitació es discuteix al capítol 7.
 
 === Documentació com a part del mètode
 
-Paral·lelament al codi s'ha mantingut un corpus de documentació tècnica de 32
-documents i aproximadament 1.800 línies, amb un document per subsistema i una
-estructura fixa: propòsit, fitxers, interfície pública, funcionament, decisions
+Paral·lelament al codi s'ha mantingut un corpus de documentació tècnica de 35
+documents i unes 2.200 línies, amb un document per subsistema i una estructura
+fixa: propòsit, fitxers, interfície pública, funcionament, decisions
 de disseny i justificació, limitacions conegudes i referències creuades.
 
 Aquesta documentació no és un subproducte redactat al final, sinó una part del
@@ -966,8 +964,8 @@ verificables a l'historial del repositori.
   d'esdeveniments netejava vuit bytes en lloc de la taula sencera, i només
   funcionava perquè l'assignador lliura la memòria ja neta.
 
-/ Corpus de documentació tècnica: Els 32 documents descrits a la secció anterior,
-  amb la justificació i les limitacions de cada subsistema.
+/ Corpus de documentació tècnica: Els 35 documents descrits a la secció
+  anterior, amb la justificació i les limitacions de cada subsistema.
 
 / Anàlisi de correspondència amb les fonts primàries: El document que relaciona
   cada decisió de disseny del motor amb la secció corresponent de les fonts
@@ -1057,7 +1055,8 @@ Windows i els dos defectes de comportament indefinit que en van resultar.
 
 === Distribució temporal
 
-La @fig:gantt situa les fases al calendari. Les barres reflecteixen els períodes
+La @fig:gantt situa al calendari les fases i les dues activitats transversals
+que les acompanyen. Les barres reflecteixen els períodes
 amb activitat efectiva, determinats a partir de l'historial del repositori, i no
 una previsió teòrica: mostren, per tant, tant la feina com les dues aturades que
 la premissa de disponibilitat anticipava.
@@ -1207,10 +1206,6 @@ usos han estat els següents.
   eines. No formen part del motor i no intervenen en el que es mesura: només
   llancen el binari amb cada configuració i desen els registres.
 
-Les decisions de disseny del capítol 4, la interpretació de les fonts i
-l'anàlisi dels resultats del capítol 6 no s'hi deleguen: són responsabilitat de
-qui signa el treball, i l'Annex A en manté la traça fins a la font primària i
-fins al codi que les implementa.
 
 === Maquinari de desenvolupament
 
@@ -1255,7 +1250,7 @@ de les decisions del capítol 4 i és la premissa dels experiments del capítol 
 La disponibilitat de dos equips amb arquitectures de memòria diferents no és
 una circumstància accessòria, sinó una condició que el treball aprofita de manera
 deliberada. L'equip A reporta el dispositiu com a
-`PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU`: no disposa de memòria local dedicada, i
+`VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU`: no disposa de memòria local dedicada, i
 els tipus de memòria visibles des del processador coincideixen en bona part amb
 els locals al dispositiu. L'equip B, amb GPU dedicada, presenta la separació
 clàssica entre les dues.
@@ -2012,7 +2007,7 @@ Dos aspectes d'aquesta implementació mereixen comentari.
 
 El primer és la comprovació de suport, que segueix el criteri establert a la
 secció sobre supòsits del dispositiu. El nombre de bits vàlids de marca de temps
-es reporta *per família de cues* i pot ser zero, cas en què les marques escrites
+es reporta per família de cues i pot ser zero, cas en què les marques escrites
 en aquella cua no tenen cap valor. El motor el consulta abans de crear la reserva
 de consultes i, si no hi ha suport, ho registra i continua sense mesura de
 dispositiu: es tracta d'un diagnòstic, no d'una funcionalitat de la qual depengui
@@ -2028,10 +2023,10 @@ i aquesta espera garanteix que la feina enviada anteriorment en aquella mateixa
 ranura ha finalitzat. Els resultats es llegeixen just després, sense afegir cap
 sincronització nova.
 
-La conseqüència és que la xifra obtinguda correspon al #f[frame] enviat dues
-iteracions abans i no al que s'inicia. Sobre una finestra de cent vint mostres
-aquest desfasament és irrellevant, però convé tenir-lo present si mai
-s'interpreten mesures individuals.
+La conseqüència és que la xifra obtinguda correspon al #f[frame] enviat tantes
+iteracions enrere com #f[frames] en vol permeti el motor, i no al que s'inicia.
+Sobre una finestra de cent vint mostres aquest desfasament és irrellevant, però
+convé tenir-lo present si mai s'interpreten mesures individuals.
 
 === Limitacions i defectes detectats
 
@@ -2191,10 +2186,10 @@ El @codi:sync mostra com s'articulen a l'inici de cada #f[frame].
 ) <codi:sync>
 
 La primera ordenació és que el processador no s'avanci indefinidament al
-dispositiu. El motor permet dos #f[frames] lògics en curs simultàniament; en
-començar-ne un, espera la tanca corresponent. Les tanques es creen ja
-senyalitzades perquè els dos primers #f[frames] no esperin una senyal que ningú
-no emetrà.
+dispositiu. El motor limita el nombre de #f[frames] lògics en curs
+simultàniament i, en començar-ne un, espera la tanca corresponent. Les tanques
+es creen ja senyalitzades perquè els primers #f[frames] no esperin una senyal
+que ningú no emetrà.
 
 La segona és que el dibuix no comenci abans que la imatge de destinació estigui
 realment disponible. L'adquisició retorna un índex immediatament, però la imatge
@@ -2208,10 +2203,12 @@ espera.
 
 === Per què els vectors tenen mides diferents
 
-Aquest és el punt no evident del disseny. El nombre de #f[frames] lògics en curs
-és una decisió del motor —dos— mentre que el nombre d'imatges de la cadena
-d'intercanvi el decideix el sistema de presentació a partir del mínim que la
-superfície reporta. No hi ha cap raó perquè coincideixin.
+Aquest és el punt no evident del disseny. Els dos nombres es deriven del mateix
+valor de partida —el mínim d'imatges que la superfície reporta— però no per la
+mateixa via: el nombre d'imatges el fixa el sistema de presentació, que en pot
+retornar més de les demanades, mentre que el nombre de #f[frames] lògics el
+calcula el motor en crear la cadena d'intercanvi. No hi ha cap raó perquè el
+resultat coincideixi.
 
 Els objectes lligats al ritme del processador es dimensionen, doncs, pel nombre
 de #f[frames] en vol, i els lligats a una imatge concreta es dimensionen pel
@@ -2317,13 +2314,14 @@ paral·lel, i especifica quins objectes requereixen sincronització externa
 precisament per permetre-ho @vulkanspec; el motor no ho aprofita. És la
 limitació més rellevant del treball i es discuteix al capítol 7.
 
-Aquesta limitació deixa de ser una conjectura un cop el motor mesura per separat
-el temps de l'amfitrió i el del dispositiu, tal com descriu la secció sobre
-gestió de memòria. Les mesures preliminars mostren que el dispositiu completa la
-feina d'un #f[frame] en una fracció del temps que el processador dedica a
-enregistrar-la i enviar-la, de manera que el coll d'ampolla del motor no és la
-capacitat de dibuix sinó el camí d'enviament. El capítol 6 hi torna amb les
-xifres i la discussió corresponents.
+L'abast real d'aquesta limitació es pot acotar un cop el motor mesura per
+separat el temps de l'amfitrió i el del dispositiu, tal com descriu la secció
+sobre gestió de memòria. Les mesures mostren que el dispositiu completa la feina
+d'un #f[frame] en una fracció del temps que dura la iteració, de manera que amb
+la càrrega gràfica actual no és el dispositiu el que la determina. Convé no
+llegir-hi més del que diu: el temps restant es reparteix entre treball de
+l'amfitrió i esperes de sincronització, que el motor no cronometra per separat.
+El capítol 6 hi torna amb les xifres i la discussió corresponents.
 
 == Sistemes de recursos
 
@@ -2440,8 +2438,9 @@ Les seccions anteriors tracten en profunditat els quatre subsistemes amb més
 càrrega de decisió. Aquesta recull l'inventari complet del motor, per situar-los
 dins del conjunt.
 
-El codi font del motor consta de 84 fitxers i aproximadament 12.700 línies,
-sense comptar-hi la biblioteca de tercers emprada per descodificar imatges. La
+El codi font del motor consta de 84 fitxers i prop de 12.900 línies, de les
+quals 10.779 no són buides, sense comptar-hi la biblioteca de tercers emprada
+per descodificar imatges. La
 @tab:subsistemes els agrupa segons les capes del model presentat al capítol 2.
 
 La darrera columna indica on trobar-ne el detall. Els subsistemes que no tenen
@@ -2566,10 +2565,6 @@ la resolució de rutes. Es tracta, precisament, del tipus de capa genèrica que 
 secció sobre el model de recursos del capítol 4 assenyalava com a mancança, tot i
 que la unificació encara no és completa.
 
-La unificació assolida és, però, parcial: el sistema de recursos centralitza la
-càrrega i la resolució de rutes, però els sistemes de textures, materials i
-geometria continuen mantenint cadascun la seva pròpia taula de referències. La
-secció següent en detalla el repartiment de responsabilitats.
 
 // =============================================================================
 = Resultats i discussió
@@ -2626,9 +2621,9 @@ val la pena enunciar-les abans dels resultats.
 
 La primera afecta el temps de dispositiu. Una consulta només es pot llegir quan
 la feina que la va escriure ha acabat, de manera que la xifra obtinguda en un
-#f[frame] correspon al que es va enviar dues iteracions abans. Sobre una
-finestra de cent vint mostres el desfasament no altera les mitjanes, però
-invalida qualsevol lectura de mesures individuals.
+#f[frame] correspon al que es va enviar tantes iteracions enrere com #f[frames]
+en vol permeti el motor. Sobre una finestra de cent vint mostres el desfasament
+no altera les mitjanes, però invalida qualsevol lectura de mesures individuals.
 
 La segona afecta el temps per #f[frame]. La capa no descarta cap període
 d'escalfament: la finestra comença a omplir-se amb el primer #f[frame] i
@@ -2661,9 +2656,9 @@ amb l'evidència corresponent i l'estat en què ha quedat cadascun. La
     stroke: 0.4pt + rgb("#ccc"),
     table.header([*Objectiu*], [*Estat*], [*Evidència*]),
     [Capa de plataforma portable], [Assolit], [§5.1, §5.5],
-    [Renderitzador amb recursos des de disc i il·luminació], [Assolit], [§5.3, §5.4],
+    [Renderitzador amb recursos des de disc i il·luminació], [Assolit], [§5.3, §5.4, §5.5],
     [Model de gestió de memòria explícit], [Assolit amb limitacions], [§5.2],
-    [Validació sobre les dues arquitectures de memòria], [Parcial], [§6.3],
+    [Validació sobre les dues arquitectures de memòria], [Assolit], [§5.3, §6.3],
     [Documentació de les decisions contra fonts primàries], [Assolit], [Cap. 4, Annex A],
     [Capa d'instrumentació pròpia], [Assolit], [§5.2, §6.1],
     [Avaluació empírica de decisions del renderitzador], [Parcial], [§6.3],
@@ -2696,8 +2691,9 @@ La @fig:windows mostra el motor executant-se sobre l'altra plataforma.
 
 #figure(
   image("figures/cub_illuminat_windows.png", width: 78%),
-  caption: [El motor sobre Windows i GPU dedicada, amb la mateixa escena de la
-    @fig:cub. El resultat és equivalent en tots dos entorns tot i que el
+  caption: [El motor sobre Windows i GPU dedicada, amb la mateixa escena que
+    s'analitza tot seguit: el cub texturat i il·luminat i el quadrilàter
+    d'interfície. El resultat és equivalent en tots dos entorns tot i que el
     controlador, el sistema de finestres i el repartiment de famílies de cues
     del dispositiu són diferents.],
 ) <fig:windows>
@@ -2746,8 +2742,9 @@ què. En una superfície plana la normal és constant, de manera que el factor
 especular ho és també i el terme es reparteix de manera uniforme per cara en
 lloc de concentrar-se en un reflex localitzat. Il·lustrar-lo exigiria geometria
 corba o variació de normal per píxel, cap de les quals forma part de l'abast
-d'aquest treball. El terme hi contribueix —forma part del càlcul descrit a
-§5.2— però la geometria disponible no permet aïllar-lo visualment.
+d'aquest treball. El terme hi contribueix —forma part del càlcul que fa el
+#f[shader] de materials— però la geometria disponible no permet aïllar-lo
+visualment.
 
 === Model de gestió de memòria
 
@@ -2768,8 +2765,8 @@ el curs de la redacció d'aquesta memòria.
 
 === Validació sobre les dues arquitectures de memòria
 
-Aquest objectiu s'ha assolit parcialment. El motor s'executa correctament sobre
-els dos equips descrits al capítol 3, i l'adaptació que ho va fer possible
+Aquest objectiu s'ha assolit. El motor s'executa correctament sobre els dos
+equips descrits al capítol 3, i l'adaptació que ho va fer possible
 —documentada a §5.3— constitueix una de les aportacions pròpies del treball. En
 aquest sentit, la validació funcional és completa.
 
@@ -3277,25 +3274,26 @@ línies no buides dels fitxers font del motor i excloent-ne el codi de tercers.
     align: (left, right, right),
     stroke: 0.4pt + rgb("#ccc"),
     table.header([*Àrea*], [*Línies*], [*Proporció*]),
-    [Renderitzador, part específica de Vulkan], [2.895], [27,8 %],
-    [Sistemes bàsics], [2.032], [19,5 %],
-    [Matemàtiques], [1.267], [12,2 %],
-    [Sistemes especialitzats], [1.177], [11,3 %],
-    [Plataforma], [1.076], [10,3 %],
-    [Renderitzador, part independent de l'API], [997], [9,6 %],
-    [Recursos], [406], [3,9 %],
-    [Contenidors], [338], [3,3 %],
-    [Punt d'entrada i assignadors], [211], [2,0 %],
-    [*Total*], [*10.399*], [*100 %*],
+    [Renderitzador, part específica de Vulkan], [3.983], [37,0 %],
+    [Sistemes bàsics], [2.042], [18,9 %],
+    [Matemàtiques], [1.269], [11,8 %],
+    [Sistemes especialitzats], [1.177], [10,9 %],
+    [Plataforma], [1.078], [10,0 %],
+    [Recursos], [406], [3,8 %],
+    [Contenidors], [341], [3,2 %],
+    [Renderitzador, part independent de l'API], [267], [2,5 %],
+    [Punt d'entrada], [158], [1,5 %],
+    [Assignadors], [58], [0,5 %],
+    [*Total*], [*10.779*], [*100 %*],
   ),
   caption: [Distribució del codi propi del motor per àrea, en línies no buides
-    de fitxers `.c` i `.h`. No s'hi comptabilitzen les 7.015 línies del
+    dels 84 fitxers font. No s'hi comptabilitzen les 7.016 línies del
     descodificador d'imatges de tercers que el motor incorpora.],
 ) <tab:loc>
 ]
 
-Més d'una quarta part del codi del motor és, doncs, específica de Vulkan, i el
-renderitzador sencer n'ocupa el trenta-set per cent. Aquestes 2.895 línies
+Més d'un terç del codi del motor és, doncs, específic de Vulkan, i el
+renderitzador sencer s'acosta al quaranta per cent. Aquestes 3.983 línies
 contenen 161 crides a l'API, 22 funcions de creació d'objectes diferents i 42
 estructures de descripció que cal omplir camp a camp abans de cada creació.
 
@@ -3611,8 +3609,10 @@ primària que el fonamenta i el fitxer del codi que l'implementa. Serveix per
 comprovar qualsevol afirmació del capítol 4 o del 5 sense haver de recórrer el
 text sencer.
 
-Les rutes són relatives a `engine/src/`. Les referències numèriques corresponen
-a la bibliografia.
+La @tab:annexa en recull el contingut. Les rutes són relatives a `engine/src/`,
+les referències numèriques corresponen a la bibliografia i les seccions
+precedides d'un número entre claudàtors són les de l'obra citada, no les
+d'aquesta memòria.
 
 #figure(
   table(
@@ -3656,9 +3656,9 @@ a la bibliografia.
     [Semàfors: dependència entre operacions de cua],
     [§5.3], [@vulkanspec §7.4, @arntzen_sync], [`vulkan/vulkan_backend.c`],
     [Conjunts de descriptors ordenats per freqüència],
-    [§4.6, §5.2], [@vulkanspec §17.2], [`vulkan/shaders/vulkan_material_shader.c`],
+    [§4.6, §7.1], [@vulkanspec §17.2], [`vulkan/shaders/vulkan_material_shader.c`],
     [Constants d'inserció per a la dada de màxima freqüència],
-    [§5.2], [@vulkanspec §17.10], [`vulkan/shaders/vulkan_material_shader.c`],
+    [§3.1, §7.1], [@vulkanspec §17.10], [`vulkan/shaders/vulkan_material_shader.c`],
     [#f[Shaders] compilats a SPIR-V abans de l'execució],
     [§2.4, §3.4], [@vulkanspec §9.2], [`post-build.sh`, `post-build.bat`],
     [Capes de validació només en compilacions de depuració],
@@ -3721,7 +3721,7 @@ Calen, a més, els paquets de desenvolupament de X11 i XCB: `libx11-dev`,
 segons la distribució. Les eines de Vulkan poden provenir dels paquets de la
 distribució, cas en què no cal definir cap variable d'entorn.
 
-Des de l'arrel del repositori:
+El @codi:build-linux recull la seqüència, des de l'arrel del repositori.
 
 #figure(
   ```bash
@@ -3740,13 +3740,13 @@ compte.
 
 Cal el SDK de Vulkan de LunarG i que la variable d'entorn `VULKAN_SDK` estigui
 definida, atès que tant els fitxers de construcció com el pas posterior la fan
-servir per localitzar les eines.
+servir per localitzar les eines. El @codi:build-win en recull la seqüència.
 
 #figure(
   ```bat
   build-all.bat
   post-build.bat
-  bin	estbed.exe
+  bin\testbed.exe
   ```,
   caption: [Construcció i execució sobre Windows.],
 ) <codi:build-win>
