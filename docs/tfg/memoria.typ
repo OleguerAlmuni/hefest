@@ -20,7 +20,10 @@
 //   7. Conclusions ................  5
 // =============================================================================
 
-#set document(title: "Hefest: motor de jocs en C amb Vulkan", author: "Oleguer Almuni")
+#set document(
+  title: "Desenvolupament d'un motor de jocs en C emprant Vulkan com a API de gràfics",
+  author: "Oleguer Almuni",
+)
 
 #set page(paper: "a4", margin: (x: 3cm, y: 2.8cm), numbering: "1")
 #set text(font: ("Libertinus Serif", "DejaVu Serif"), size: 11pt, lang: "ca")
@@ -63,23 +66,43 @@
 // Marca visual per a text pendent d'escriure. Esborrar abans d'entregar.
 #let todo(x) = text(fill: rgb("#b03030"))[#emph[[#x]]]
 
+// Dades de portada. Es declaren aquí perquè apareixen en més d'un lloc.
+#let nom-autor = [Oleguer Almuni#todo[Nom complet amb els dos cognoms.]]
+#let nom-director = todo[Nom del director o ponent.]
+#let convocatoria = todo[Convocatòria i data de lliurament.]
+
 // =============================================================================
 #set page(numbering: none)
 
 #align(center)[
-  #v(3cm)
-  #text(size: 15pt)[TREBALL DE FINAL DE GRAU]
-  #v(1cm)
-  #text(size: 24pt, weight: "bold")[
-    Hefest: disseny i avaluació d'un motor\ de jocs en C amb Vulkan
+  #v(1.5cm)
+  #text(size: 13pt)[LA SALLE CAMPUS BARCELONA]\
+  #text(size: 13pt)[UNIVERSITAT RAMON LLULL]
+  #v(0.4cm)
+  #todo[Logotip de l'escola, si la plantilla el requereix.]
+  #v(2.2cm)
+  #text(size: 14pt)[TREBALL DE FINAL DE GRAU]
+  #v(0.3cm)
+  #text(size: 13pt)[Grau en Enginyeria Multimèdia]
+  #v(1.6cm)
+  #line(length: 60%, stroke: 0.6pt)
+  #v(0.8cm)
+  #text(size: 21pt, weight: "bold")[
+    Desenvolupament d'un motor de jocs\ en C emprant Vulkan com a API de gràfics
   ]
-  #v(0.6cm)
-  #todo[Títol acordat amb el director.]
+  #v(0.8cm)
+  #line(length: 60%, stroke: 0.6pt)
+  #v(1fr)
+  #grid(
+    columns: (auto, auto),
+    column-gutter: 1.2em,
+    row-gutter: 0.7em,
+    align: (right, left),
+    [Autor:], [#nom-autor],
+    [Director:], [#nom-director],
+    [Convocatòria:], [#convocatoria],
+  )
   #v(2cm)
-  Oleguer Almuni\
-  Grau en Enginyeria Multimèdia
-  #v(1cm)
-  #datetime.today().display("[day]/[month]/[year]")
 ]
 
 #pagebreak()
