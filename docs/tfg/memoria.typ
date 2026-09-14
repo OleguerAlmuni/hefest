@@ -2591,6 +2591,16 @@ format de vèrtex, l'ús d'una funció de la biblioteca estàndard per llegir
 variables d'entorn i els subsistemes de nova incorporació— no van arribar a
 materialitzar-se.
 
+La @fig:windows mostra el motor executant-se sobre l'altra plataforma.
+
+#figure(
+  image("figures/cub_illuminat_windows.png", width: 78%),
+  caption: [El motor sobre Windows i GPU dedicada, amb la mateixa escena de la
+    @fig:cub. El resultat és equivalent en tots dos entorns tot i que el
+    controlador, el sistema de finestres i el repartiment de famílies de cues
+    del dispositiu són diferents.],
+) <fig:windows>
+
 L'execució, en canvi, va requerir corregir dos defectes que el capítol 5
 documenta. Convé destacar-ne la naturalesa: cap dels dos és específic de
 Windows. Tots dos són comportament indefinit present també a l'entorn Linux,
@@ -2829,9 +2839,15 @@ microsegons mesurats corresponen al cost d'emetre-les i no al de completar-les.
 La xifra és vàlida com a comparació de cost d'estratègia i no ho és com a mesura
 d'amplada de banda ni de latència de transferència.
 
+Les mesures de l'equip B es van prendre sobre un binari que duia instrumentació
+de diagnòstic addicional, retirada posteriorment. Una execució de comprovació
+amb el codi net dona 5,268 mil·lisegons per a la via del búfer intermedi, dins
+del rang de les tres repeticions, de manera que l'instrument no distorsionava
+la mesura.
+
 Les sis execucions de cada equip es conserven senceres a l'Annex C, de manera
-que qualsevol xifra d'aquesta taula és comprovable contra el registre que la
-va produir.
+que qualsevol xifra d'aquesta taula és comprovable contra el registre que la va
+produir.
 
 ==== Abast del resultat
 
@@ -3407,5 +3423,9 @@ Cada registre conté tres línies rellevants per a l'experiment:
   recull la finestra de mostres. Se n'emet un per segon; el rellevant és
   l'últim de cada execució.
 
-#todo[Afegir els sis registres de l'equip B, que encara són a l'altra màquina,
-amb la mateixa convenció de noms.]
+Els registres de l'equip B provenen del fitxer que el motor escriu a
+`bin/console.log` i no de la redirecció de la sortida estàndard, ja que sobre
+Windows la funció d'escriptura per consola de la capa de plataforma no funciona
+quan la sortida apunta a un fitxer. És una limitació de la implementació
+d'aquella capa que no afecta les mesures però sí la manera de capturar-les, i
+que el fitxer de notes del mateix directori documenta.
