@@ -32,6 +32,21 @@ HAPI void memory_system_shutdown(void* state);
 
 HAPI void* hallocate(u64 size, memory_tag tag);
 
+/**
+ * Registers an allocation that was made before the counter existed.
+ *
+ * The counter's own state lives inside the systems allocator, so the block that
+ * backs that allocator -- and the application state that holds it -- must be
+ * reserved before memory_system_initialize can run. Those reservations go
+ * through hallocate while state_ptr is still null and are therefore invisible
+ * to the statistics. This function lets the caller declare them once the
+ * counter is up, so that the report accounts for every byte the process asked
+ * the operating system for rather than only for what was asked afterwards.
+ *
+ * It performs no allocation of its own.
+ */
+HAPI void hmemory_account_untracked(u64 size, memory_tag tag);
+
 HAPI void hfree(void* block, u64 size, memory_tag tag);
 
 HAPI void* hzero_memory(void* block, u64 size);

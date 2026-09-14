@@ -141,6 +141,12 @@ b8 application_create(game* game_inst) {
     app_state->memory_system_state = linear_allocator_allocate(&app_state->systems_allocator, app_state->memory_system_memory_requirement);
     memory_system_initialize(&app_state->memory_system_memory_requirement, app_state->memory_system_state);
 
+    // The two reservations above had to happen before the counter existed, so
+    // declare them now. Without this the report would show a few kilobytes
+    // while the process holds the whole systems block.
+    hmemory_account_untracked(sizeof(application_state), MEMORY_TAG_APPLICATION);
+    hmemory_account_untracked(systems_allocator_total_size, MEMORY_TAG_LINEAR_ALLOCATOR);
+
     // logging system
     initialize_logging(&app_state->logging_system_memory_requirement, 0);
     app_state->logging_system_state = linear_allocator_allocate(&app_state->systems_allocator, app_state->logging_system_memory_requirement);

@@ -75,6 +75,16 @@ void* hallocate(u64 size, memory_tag tag) {
     return block;
 }
 
+void hmemory_account_untracked(u64 size, memory_tag tag) {
+    if (!state_ptr) {
+        return;
+    }
+
+    state_ptr->stats.total_allocated += size;
+    state_ptr->stats.tagged_allocations[tag] += size;
+    state_ptr->alloc_count++;
+}
+
 void hfree(void* block, u64 size, memory_tag tag) {
     if (tag == MEMORY_TAG_UNKNOWN) {
         HWARN("hfree called using MEMORY_TAG_UNKNOWN. Re-class this allocation.");

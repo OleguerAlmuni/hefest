@@ -32,7 +32,7 @@ void event_system_initialize(u64* memory_requirement, void* state) {
     if (state == 0) {
         return;
     }
-    hzero_memory(state, sizeof(state));
+    hzero_memory(state, sizeof(event_system_state));
     state_ptr = state;
 }
 
