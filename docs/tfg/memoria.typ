@@ -38,6 +38,23 @@
 #show figure.where(kind: table): set figure.caption(position: top)
 #show figure.where(kind: image): set figure.caption(position: bottom)
 
+// Fragments de codi: numerats a part de figures i taules, amb peu a sota.
+#show raw: set text(font: ("DejaVu Sans Mono", "Liberation Mono"), size: 8.4pt)
+#show raw.where(block: true): it => block(
+  fill: rgb("#f6f6f3"),
+  stroke: (left: 2pt + rgb("#bbb")),
+  inset: (x: 9pt, y: 7pt),
+  radius: 2pt,
+  width: 100%,
+  it,
+)
+#show figure.where(kind: raw): set figure.caption(position: bottom)
+#show figure.where(kind: raw): set figure(supplement: [Codi])
+
+// Les taules llargues han de poder trencar-se entre pàgines; la capçalera
+// declarada amb table.header es repeteix automàticament.
+#show figure.where(kind: table): set block(breakable: true)
+
 #show heading.where(level: 1): it => {
   pagebreak(weak: true)
   block(above: 0em, below: 1.2em, text(size: 17pt, weight: "bold", it))
@@ -115,6 +132,7 @@ Si és així, traduir-lo un cop el text català estigui tancat.]
 #pagebreak()
 #outline(title: [Índex de figures], target: figure.where(kind: image))
 #outline(title: [Índex de taules], target: figure.where(kind: table))
+#outline(title: [Índex de fragments de codi], target: figure.where(kind: raw))
 
 #pagebreak()
 
@@ -980,53 +998,130 @@ compatible amb la jornada laboral.
 
 === Pressupost d'hores
 
-El treball té assignats 16 crèdits ECTS, que constitueixen l'ancoratge del
-pressupost de dedicació. #todo[Completar amb la ràtio d'hores per crèdit que
-estableix el pla d'estudis —habitualment entre 25 i 30— i el total resultant,
-que se situaria entre 400 i 480 hores. Verificar-ho a la normativa del grau en
-lloc d'estimar-ho.]
+El treball té assignats 16 crèdits ECTS. A raó de vint-i-cinc hores per crèdit,
+el pressupost de dedicació és de quatre-centes hores, i és sobre aquesta xifra
+que s'ha distribuït la càrrega de les tasques.
 
-Aquest total s'ha distribuït entre les fases de desenvolupament, l'avaluació i
-la redacció de la memòria segons la @tab:planificacio.
-
-#todo[Completar la @tab:planificacio amb les hores previstes i reals per fase.
-El rúbric valora que s'hagin «definit tasques, valorant-ne les càrregues i
-complert la temporització»; amb la premissa de disponibilitat declarada més
-amunt, una distribució desigual entre fases és coherent amb el pla i no
-constitueix una desviació.]
-
-=== Fases, càrrega i temporització
+La @tab:planificacio en recull el repartiment.
 
 #figure(
   table(
-    columns: (auto, auto, auto, auto),
+    columns: (1fr, auto),
     inset: 6pt,
-    align: (left, left, right, right),
+    align: (left, right),
     stroke: 0.4pt + rgb("#ccc"),
-    table.header([*Fase*], [*Període*], [*Hores previstes*], [*Hores reals*]),
-    [Posada en marxa], [ago. -- set. 2025], [#todo[--]], [#todo[--]],
-    [Refactorització], [des. 2025], [#todo[--]], [#todo[--]],
-    [Consolidació], [des. 2025 -- jun. 2026], [#todo[--]], [#todo[--]],
-    [Avaluació i mesures], [#todo[--]], [#todo[--]], [#todo[--]],
-    [Redacció de la memòria], [#todo[--]], [#todo[--]], [#todo[--]],
-    [*Total*], [], [#todo[--]], [#todo[--]],
+    table.header([*Tasca*], [*Hores*]),
+    [Estudi de les fonts i de la implementació de referència], [150],
+    [Escriptura de codi nou], [55],
+    [Depuració i adaptació a maquinari divers], [45],
+    [Redacció de la memòria], [30],
+    [Documentació tècnica dels subsistemes], [30],
+    [Revisió i refactorització de codi existent], [25],
+    [Disseny, execució i anàlisi de l'avaluació], [25],
+    [Sistema de construcció i entorn de desenvolupament], [20],
+    [Seguiment i reunions de direcció], [15],
+    [*Total*], [*395*],
   ),
-  caption: [Distribució de la càrrega de treball per fases.],
+  caption: [Distribució estimada de la dedicació per tasca.],
 ) <tab:planificacio>
 
-#todo[Afegir aquí el diagrama de Gantt. L'Annex E n'ha de contenir la versió
-detallada; al cos hi va la vista resumida per fases.]
+Dues línies mereixen comentari perquè la seva magnitud pot sorprendre.
+
+L'estudi de les fonts és, amb diferència, la partida més gran, i respon a la
+naturalesa del treball tal com s'ha plantejat al capítol 1: l'objectiu no era
+produir codi sinó entendre'l, i cada decisió estructural del capítol 4 va
+requerir contrastar la implementació de referència amb la bibliografia i amb
+l'especificació de l'API. Inclou també el seguiment de la sèrie de referència,
+activitat que combina estudi i escriptura de codi en proporcions difícils de
+separar.
+
+La depuració i adaptació a maquinari divers apareix separada de l'escriptura de
+codi perquè és de naturalesa diferent i perquè constitueix una part
+substancial de l'aportació pròpia del treball. Hi entren la correcció dels
+supòsits sobre el dispositiu documentats a §5.3, el port a Linux, el port a
+Windows i els dos defectes de comportament indefinit que en van resultar.
+
+=== Distribució temporal
+
+La @fig:gantt situa les fases al calendari. Les barres reflecteixen els períodes
+amb activitat efectiva, determinats a partir de l'historial del repositori, i no
+una previsió teòrica: mostren, per tant, tant la feina com les dues aturades que
+la premissa de disponibilitat anticipava.
+
+#figure(
+  block(width: 100%)[
+    #let mesos = ("A","S","O","N","D","G","F","M","A","M","J","J","A","S")
+    #let anys = ("2025","","","","","2026","","","","","","","","")
+    #let ple = rgb("#5b7fa6")
+    #let fluix = rgb("#c3d2e0")
+    // 1 = activitat principal, 2 = activitat reduïda, 0 = cap
+    #let files = (
+      ("Posada en marxa",        (1,1,0,0,0,0,0,0,0,0,0,0,0,0)),
+      ("Refactorització",        (0,0,0,0,1,0,0,0,0,0,0,0,0,0)),
+      ("Consolidació",           (0,0,0,0,1,2,1,1,2,2,1,0,0,0)),
+      ("Ampliació",              (0,0,0,0,0,0,0,0,0,0,0,0,0,1)),
+      ("Avaluació i mesures",    (0,0,0,0,0,0,0,0,0,0,0,0,0,1)),
+      ("Redacció de la memòria", (0,0,0,0,0,0,0,0,0,0,0,0,2,1)),
+    )
+    #table(
+      columns: (7.6em,) + (1fr,) * 14,
+      inset: 0pt,
+      stroke: none,
+      align: center + horizon,
+      [], ..anys.map(a => text(size: 7pt, fill: rgb("#666"), a)),
+      [], ..mesos.map(m => text(size: 7.5pt, m)),
+      ..files.map(((nom, cel)) => (
+        text(size: 8pt, nom) + h(4pt),
+        ..cel.map(v => box(
+          width: 100%, height: 11pt, inset: 1pt,
+          rect(width: 100%, height: 100%, radius: 1pt,
+               fill: if v == 1 { ple } else if v == 2 { fluix } else { rgb("#f0f0ee") },
+               stroke: none),
+        )),
+      )).flatten()
+    )
+    #v(5pt)
+    #text(size: 8pt)[
+      #box(width: 9pt, height: 9pt, fill: ple, radius: 1pt) activitat principal
+      #h(10pt)
+      #box(width: 9pt, height: 9pt, fill: fluix, radius: 1pt) activitat reduïda
+      #h(10pt)
+      #box(width: 9pt, height: 9pt, fill: rgb("#f0f0ee"), radius: 1pt) sense activitat
+    ]
+  ],
+  kind: image,
+  caption: [Distribució temporal de les fases. Els períodes d'octubre i novembre
+    de 2025 i de juliol i agost de 2026 no registren activitat, cosa coherent
+    amb la premissa de disponibilitat exposada més amunt.],
+) <fig:gantt>
+
+
 
 === Desviacions
 
-#todo[Secció breu i honesta. Reconèixer una desviació i explicar-ne la causa
-puntua més que presentar una planificació sense incidències que l'historial del
-repositori contradiu. Candidats a esmentar:
-+ El sistema de materials es va endarrerir respecte de la previsió inicial.
-+ L'adaptació a GPU integrades no estava planificada; va sorgir en detectar que
-  el motor no s'executava correctament sobre el maquinari de desenvolupament, i
-  va consumir temps no previst. Va acabar sent una de les aportacions pròpies
-  del treball, de manera que la desviació té un resultat defensable.]
+La planificació ha resultat raonablement ajustada al pressupost, amb una
+dedicació estimada de 395 hores sobre les 400 previstes, però la seva
+distribució temporal no ha estat la que s'anticipava. Es recullen aquí les dues
+desviacions més rellevants.
+
+La primera afecta el repartiment entre activitats. L'estudi de les fonts ha
+consumit una proporció de la dedicació superior a la prevista inicialment, en
+part perquè contrastar cada decisió amb la bibliografia i amb l'especificació és
+més lent que adoptar-la, i en part perquè aquest contrast va obligar en dues
+ocasions a refer conclusions ja escrites. Aquestes dues ocasions es documenten
+al capítol 7 i, vistes en retrospectiva, són el que distingeix aquest treball
+d'una reproducció de la implementació de referència; el temps addicional
+que van consumir es considera, doncs, ben invertit.
+
+La segona afecta el calendari. El sistema de materials i els subsistemes que
+en depenen —geometria, recursos i les passades de renderitzat addicionals— es
+van endarrerir respecte de la previsió i es van concentrar en la fase final.
+L'adaptació a maquinari no previst, per la seva banda, no estava planificada en
+absolut: va sorgir en detectar que el motor no s'executava sobre l'equip de
+desenvolupament, i va consumir temps que no tenia assignació. Va acabar sent una
+de les aportacions pròpies del treball i la base de bona part del capítol 5, de
+manera que la desviació té un resultat defensable, però no deixa de ser una
+desviació.
 
 == Eines i entorn de desenvolupament
 
@@ -1253,7 +1348,8 @@ mantenir control sobre la disposició de la memòria.
 
 C++ ofereix genèrics, gestió automàtica de recursos mitjançant el patró de
 concessió de recursos en la inicialització, sobrecàrrega d'operadors i una
-biblioteca estàndard extensa @stroustrup2013. Aquest patró, en particular,
+biblioteca estàndard extensa @stroustrup2013. C, per la seva banda, és un
+llenguatge de superfície considerablement més reduïda @gustedt2019. Aquest patró, en particular,
 permet adquirir recursos en el constructor i alliberar-los en el destructor,
 cosa que elimina les operacions d'assignació explícites del codi general
 @stroustrup2013.
@@ -1431,6 +1527,31 @@ cas en què es limita a informar de la mida que necessita; entre les dues
 crides, l'aplicació reserva aquesta quantitat de memòria; i la segona crida ja
 rep el bloc i hi construeix l'estat. Aquesta seqüència es repeteix per a cada
 subsistema, en l'ordre que les dependències imposen, dins d'una única funció.
+El @codi:init en mostra les dues bandes.
+
+#figure(
+  ```c
+  // Costat del subsistema: la mateixa funció respon les dues preguntes.
+  b8 subsistema_initialize(u64* memory_requirement, void* state) {
+      *memory_requirement = sizeof(subsistema_state);
+      if (state == 0) {
+          return true;          // primera crida: només informa de la mida
+      }
+      state_ptr = state;        // segona crida: rep el bloc i s'hi instal·la
+      /* ... inicialització efectiva ... */
+      return true;
+  }
+
+  // Costat de l'aplicació: preguntar, reservar, inicialitzar.
+  subsistema_initialize(&mida, 0);
+  estat = linear_allocator_allocate(&app_state->systems_allocator, mida);
+  subsistema_initialize(&mida, estat);
+  ```,
+  caption: [Patró d'inicialització en dues crides. La primera invocació informa
+    de la mida de l'estat; l'aplicació reserva aquesta quantitat de l'assignador
+    lineal i la lliura a la segona. El subsistema no decideix, doncs, ni on
+    resideix el seu estat ni quan s'allibera.],
+) <codi:init>
 
 La memòria surt d'un assignador lineal, que reserva un bloc de 64 MiB en
 iniciar-se i el reparteix de manera incremental sense alliberar-ne mai peces
@@ -1479,25 +1600,66 @@ fer i allò que només té sentit sobre una API concreta.
 
 La frontera es materialitza en una estructura de punters a funció que la part
 independent de l'API invoca i que una funció de selecció omple segons la
-implementació activa. Aquesta estructura declara nou operacions: inicialització,
-tancament, notificació de canvi de mida, inici i final de #f[frame],
-actualització de l'estat global, actualització d'un objecte, i creació i
-destrucció de textures.
+implementació activa, tal com recull el @codi:backend.
 
-El criteri que governa aquesta llista és el nivell d'abstracció. Les operacions
-parlen de #f[frames], d'objectes i de textures, no de primitives de la GPU: no
-hi ha cap entrada per crear una canonada gràfica, iniciar una passada de
-renderitzat o vincular un conjunt de descriptors. Aquesta elecció és deliberada.
-Una interfície de gra fi que exposés els conceptes de Vulkan hauria estat més
-flexible, però hauria traslladat el model d'aquesta API a la part que se
-suposava independent, i qualsevol implementació alternativa hauria hagut
-d'emular-lo.
+#figure(
+  ```c
+  typedef struct renderer_backend {
+      u64 frame_number;
+
+      b8   (*initialize)(struct renderer_backend*, const char* application_name);
+      void (*shutdown)(struct renderer_backend* backend);
+      void (*resized)(struct renderer_backend* backend, u16 width, u16 height);
+
+      b8   (*begin_frame)(struct renderer_backend* backend, f32 delta_time);
+      void (*update_global_world_state)(mat4 projection, mat4 view, vec3 view_position,
+                                        vec4 ambient_color, vec4 light_direction,
+                                        vec4 light_color, i32 mode);
+      void (*update_global_ui_state)(mat4 projection, mat4 view, i32 mode);
+      b8   (*end_frame)(struct renderer_backend* backend, f32 delta_time);
+
+      b8   (*begin_renderpass)(struct renderer_backend* backend, u8 renderpass_id);
+      b8   (*end_renderpass)(struct renderer_backend* backend, u8 renderpass_id);
+
+      void (*draw_geometry)(geometry_render_data data);
+
+      void (*create_texture)(const u8* pixels, struct texture* texture);
+      void (*destroy_texture)(struct texture* texture);
+      b8   (*create_material)(struct material* material);
+      void (*destroy_material)(struct material* material);
+      b8   (*create_geometry)(geometry* geometry, /* ... */);
+      void (*destroy_geometry)(geometry* geometry);
+  } renderer_backend;
+  ```,
+  caption: [La frontera entre la part independent de l'API i la seva
+    implementació. Cap paràmetre és un objecte de Vulkan: les operacions parlen
+    de #f[frames], de geometries i de materials.],
+) <codi:backend>
+
+El criteri que governa aquesta llista és el nivell d'abstracció. Cap dels
+paràmetres és un objecte de l'API gràfica: no hi ha cap entrada per crear una
+canonada, ni per vincular un conjunt de descriptors, ni per reservar memòria de
+dispositiu. Aquesta elecció és deliberada. Una interfície de gra fi que exposés
+els conceptes de Vulkan hauria estat més flexible, però hauria traslladat el
+model d'aquesta API a la part que se suposava independent, i qualsevol
+implementació alternativa hauria hagut d'emular-lo.
 
 La conseqüència és que la part independent pot mantenir les matrius de
-projecció i de vista i un punter a la textura activa sense saber què és un
+projecció i de vista i la informació d'il·luminació sense saber què és un
 conjunt de descriptors, i que tot allò específic de l'API —memòria de
 dispositiu, #f[command buffers], sincronització, disposicions d'imatge— queda
-confinat rere aquestes nou funcions.
+confinat rere aquestes funcions.
+
+Convé assenyalar que aquesta frontera s'ha desplaçat durant el desenvolupament.
+Les dues operacions que delimiten una passada de renderitzat es van incorporar
+en generalitzar el motor per admetre'n més d'una, i introdueixen a la part
+independent un concepte manllevat de l'API gràfica. La concessió està
+parcialment continguda —la passada s'identifica amb un enter opac i no amb cap
+objecte de Vulkan, de manera que una implementació alternativa podria
+interpretar-lo com li convingués—, però és una concessió. Il·lustra que una
+frontera d'aquesta mena no es fixa d'una vegada sinó que cedeix a mesura que el
+sistema creix, i que mantenir-la exigeix decidir cada cop si la pressió es
+resisteix o s'accepta.
 
 === Cost de la decisió
 
@@ -1549,7 +1711,7 @@ A aquest esquema s'hi afegeix un segon mecanisme. Cada recurs manté, a més de
 l'identificador, un camp de generació que s'incrementa cada vegada que el
 contingut es torna a carregar. Un punter per si sol no permet saber que allò que
 apunta ha estat substituït; la parella formada per l'identificador i la generació
-sí que ho permet.
+sí que ho permet @weissflog_handles.
 
 Aquest mecanisme té una utilitat concreta al renderitzador. Els conjunts de
 descriptors que vinculen una textura a un #f[shader] han de reescriure's quan la
@@ -1583,7 +1745,7 @@ visible: la repetició no afecta dos subsistemes sinó tres.
 //
 // AVÍS: NO documentar tots els subsistemes amb la mateixa profunditat: es
 // llegeix com un manual d'usuari, no com una memòria. Cinc o sis en
-// profunditat, la resta en una taula resum amb remissió a l'Annex C.
+// profunditat, la resta en una taula resum amb remissió al repositori.
 //
 // Aquest capítol és on es fa visible l'abast del motor, que és l'argument
 // central del treball: un motor complet queda molt per sobre del que s'ha
@@ -1720,7 +1882,7 @@ l'estat de llarga durada del motor resideix en una regió contigua amb un cicle
 de vida igual al del procés.
 
 Aquesta estructura correspon a l'assignador de pila que descriu la bibliografia
-@gregory2018, amb una funcionalitat menys: la possibilitat d'obtenir un
+@gregory2018 @gingerbill_alloc, amb una funcionalitat menys: la possibilitat d'obtenir un
 marcador de la posició actual i, més endavant, retornar-hi alliberant de cop tot
 el que s'hagi reservat des d'aleshores. Aquesta absència no afecta l'ús actual
 —estat que viu tota l'execució— però impedeix l'ús que la mateixa font descriu
@@ -1750,7 +1912,8 @@ resultar innecessària.
 La reserva de memòria de dispositiu es fa avui en blocs grans i fixos per als
 búfers de vèrtexs i d'índexs, sense subassignador. La documentació de referència
 adverteix que les reserves individuals estan limitades en nombre i recomana
-precisament reservar blocs grans i subassignar-hi a dins @riguer2015; el motor
+precisament reservar blocs grans i subassignar-hi a dins @riguer2015
+@sawicki_vma; el motor
 en fa la primera meitat i no la segona.
 
 === Instrumentació
@@ -1827,7 +1990,7 @@ Cap dels dos assignadors alinea les reserves: retornen l'adreça següent. Els
 estats dels subsistemes queden alineats per la mida de les estructures que els
 precedeixen i no per garantia de l'assignador. La bibliografia dedica un apartat
 a per què això és un problema de correcció en algunes arquitectures i de
-rendiment en la resta @gregory2018, i l'API gràfica és estricta en aquest punt
+rendiment en la resta @gregory2018 @drepper2007, i l'API gràfica és estricta en aquest punt
 del costat del dispositiu, on exigeix que els desplaçaments siguin múltiples
 d'una alineació que el controlador reporta @vulkanspec. El costat de l'amfitrió
 del motor és, doncs, el laxe. El codi ho té marcat en dos punts.
@@ -1864,8 +2027,8 @@ implícita entre operacions de cues diferents @vulkanspec. El renderitzador, per
 tant, no dibuixa: enregistra ordres i les envia. Tot allò que hagi de succeir en
 un ordre determinat ha de ser ordenat explícitament per l'aplicació.
 
-L'API distingeix dues primitives per fer-ho, i la distinció és precisament la
-que determina quina s'utilitza a cada punt. Una tanca introdueix una dependència
+L'API distingeix dues primitives per fer-ho @arntzen_sync, i la distinció és
+precisament la que determina quina s'utilitza a cada punt. Una tanca introdueix una dependència
 d'una cua cap a l'amfitrió: el processador hi espera per saber que la feina del
 dispositiu ha acabat @vulkanspec. Un semàfor introdueix una dependència entre
 operacions de cua: el dispositiu hi espera per saber que una altra feina seva ha
@@ -1901,6 +2064,30 @@ vectors d'objectes de sincronització per fer-ho. La @tab:sync els recull.
   ),
   caption: [Objectes de sincronització i criteri de dimensionament.],
 ) <tab:sync>
+
+El @codi:sync mostra com s'articulen a l'inici de cada #f[frame].
+
+#figure(
+  ```c
+  // 1. No avançar-se més enllà dels frames en vol permesos.
+  vkWaitForFences(device, 1, &in_flight_fences[current_frame], true, UINT64_MAX);
+
+  // 2. Adquirir la imatge. Retorna un índex ara; el semàfor es senyala
+  //    quan la imatge és realment disponible.
+  vulkan_swapchain_acquire_next_image_index(
+      &ctx, &ctx.swapchain, UINT64_MAX,
+      image_available_semaphores[current_frame], 0, &image_index);
+
+  // 3. Si un frame anterior encara fa servir aquesta imatge, esperar-lo.
+  if (images_in_flight[image_index] != 0) {
+      vkWaitForFences(device, 1, images_in_flight[image_index], true, UINT64_MAX);
+  }
+  images_in_flight[image_index] = &in_flight_fences[current_frame];
+  ```,
+  caption: [Sincronització a l'inici del #f[frame]. Els vectors indexats per
+    #f[frame] lògic i els indexats per imatge de la cadena d'intercanvi es
+    mantenen separats perquè les seves mides no tenen cap raó de coincidir.],
+) <codi:sync>
 
 La primera ordenació és que el processador no s'avanci indefinidament al
 dispositiu. El motor permet dos #f[frames] lògics en curs simultàniament; en
@@ -2114,9 +2301,23 @@ sentit: el material no conté la textura sinó que la nomena, de manera que dos
 materials que anomenin la mateixa textura en comparteixen una sola còpia a la
 memòria del dispositiu.
 
-El fitxer de material és, a més, el primer actiu del motor dirigit per dades en
-el sentit que li dona la bibliografia: una definició que resideix en un fitxer
-de text i no al codi. Inclou un camp de versió que actualment no s'interpreta,
+El fitxer de material, que el @codi:hmt reprodueix, és el primer actiu del motor
+dirigit per dades en el sentit que li dona la bibliografia: una definició que
+resideix en un fitxer de text i no al codi.
+
+#figure(
+  ```
+  #material file
+
+  version=0.1
+  name=test_material
+  diffuse_color=1.0 1.0 1.0 1.0
+  diffuse_map_name=cobblestone_floor_tiled_32
+  ```,
+  caption: [Fitxer de definició d'un material. El material anomena la seva
+    textura en lloc de contenir-la, cosa que permet que diversos materials en
+    comparteixin una sola còpia a la memòria del dispositiu.],
+) <codi:hmt> Inclou un camp de versió que actualment no s'interpreta,
 previst per permetre'n l'evolució del format.
 
 === Unificació parcial
@@ -2142,6 +2343,13 @@ El codi font del motor consta de 84 fitxers i aproximadament 12.700 línies,
 sense comptar-hi la biblioteca de tercers emprada per descodificar imatges. La
 @tab:subsistemes els agrupa segons les capes del model presentat al capítol 2.
 
+La darrera columna indica on trobar-ne el detall. Els subsistemes que no tenen
+una secció pròpia en aquest capítol es documenten a les capçaleres del seu codi
+font, comentades una per una, i al corpus de documentació tècnica descrit a la
+secció sobre el mètode de treball. S'ha preferit aquesta remissió a reproduir
+aquí la interfície pública de cada mòdul, que duplicaria sense afegir-hi res el
+que el codi ja declara.
+
 #figure(
   table(
     columns: (auto, 1fr, auto),
@@ -2158,13 +2366,13 @@ sense comptar-hi la biblioteca de tercers emprada per descodificar imatges. La
     [§5.1],
     [Sistema de fitxers],
     [Lectura i escriptura de fitxers en mode text i binari.],
-    [Annex C],
+    [Repositori],
 
     table.cell(colspan: 3)[_Sistemes bàsics_],
     [Registre i assercions],
     [Sis nivells de severitat, amb els inferiors eliminats en compilacions de
      producció.],
-    [Annex C],
+    [Repositori],
     [Memòria],
     [Reserva etiquetada per categoria, amb totals acumulats per etiqueta i
      recompte d'assignacions.],
@@ -2178,24 +2386,25 @@ sense comptar-hi la biblioteca de tercers emprada per descodificar imatges. La
     [§5.2],
     [Esdeveniments],
     [Publicació i subscripció per codi d'esdeveniment.],
-    [Annex C],
+    [Repositori],
     [Entrada],
     [Estat de teclat i ratolí, amb comparació entre l'estat actual i el previ per
      detectar transicions.],
-    [Annex C],
+    [Repositori],
     [Rellotge],
-    [Mesura de temps transcorregut, base del càlcul del pas de temps.],
-    [Annex C],
+    [Mesura de temps transcorregut, base del càlcul del pas de temps
+     @fiedler_timestep.],
+    [Repositori],
     [Cadenes],
     [Manipulació de cadenes i conversió a tipus numèrics i vectorials.],
-    [Annex C],
+    [Repositori],
     [Contenidors],
     [Vector dinàmic amb capçalera de metadades i taula de dispersió.],
-    [Annex C],
+    [Repositori],
     [Matemàtiques],
     [Vectors, matrius, quaternions i les projeccions i transformacions que el
      renderitzador necessita.],
-    [Annex C],
+    [Repositori],
 
     table.cell(colspan: 3)[_Gestió de recursos_],
     [Sistema de recursos],
@@ -2975,12 +3184,12 @@ relació entre el que aporten i el que costen.
 
 + *Sistema de tasques concurrents.* És el canvi estructural de més abast
   disponible i el que més aprofitaria el disseny de l'API. La bibliografia en
-  descriu l'arquitectura @gregory2018 i l'especificació precisa quins objectes
-  requereixen sincronització externa @vulkanspec.
+  descriu l'arquitectura @gregory2018 @gyrling2015 i l'especificació precisa quins
+  objectes requereixen sincronització externa @vulkanspec.
 
 + *Cua de renderitzat i representació d'escena.* Substituir el paquet fix per
   una llista de parells de malla i material, ordenable per minimitzar canvis
-  d'estat @gregory2018. És el requisit previ de qualsevol escena no trivial.
+  d'estat @gregory2018 @reinalter_rendering. És el requisit previ de qualsevol escena no trivial.
 
 + *Subassignador de memòria de dispositiu.* Repartir les reserves grans que el
   motor ja fa, tal com recomana la documentació de referència @riguer2015.
@@ -3012,13 +3221,171 @@ barat de tot el rúbric.]
 #bibliography("refs.bib", style: "ieee", title: none)
 
 // =============================================================================
+#set heading(numbering: none)
+
 #heading(numbering: none)[Annexos]
 
-#todo[
-/ Annex A: Mapatge de decisions de disseny a fonts primàries. (Traducció i
-  adaptació de `docs/analysis/concepts-and-sources.typ`.)
-/ Annex B: Manual de compilació i execució.
-/ Annex C: Referència de l'API pública dels subsistemes.
-/ Annex D: Resultats complets de les mesures. (Al cos, només els gràfics.)
-/ Annex E: Planificació detallada i diagrama de Gantt.
-]
+#heading(numbering: none, level: 2)[Annex A. Correspondència entre decisions i fonts]
+
+Aquest annex recull, de manera compacta i verificable, la correspondència que
+l'objectiu de documentació enunciat al capítol 1 promet: cada mecanisme
+estructural del motor, la secció de la memòria que el justifica, la font
+primària que el fonamenta i el fitxer del codi que l'implementa. Serveix per
+comprovar qualsevol afirmació del capítol 4 o del 5 sense haver de recórrer el
+text sencer.
+
+Les rutes són relatives a `engine/src/`. Les referències numèriques corresponen
+a la bibliografia.
+
+#figure(
+  table(
+    columns: (1.5fr, auto, auto, 1.3fr),
+    inset: 5.5pt,
+    align: (left, left, left, left),
+    stroke: 0.4pt + rgb("#ccc"),
+    table.header([*Mecanisme*], [*Memòria*], [*Font*], [*Codi*]),
+
+    table.cell(colspan: 4)[_Arquitectura i cicle de vida_],
+    [Motor com a #f[framework]: el motor posseeix el bucle],
+    [§4.3], [@gregory2018 §8.3.2], [`entry.h`, `game_types.h`],
+    [Ordre d'arrencada explícit dels subsistemes],
+    [§4.4, §5.1], [@gregory2018 §6.1], [`core/application.c`],
+    [Dimensionament en dues crides],
+    [§4.4, §5.1], [@vulkanspec §5.1], [tots els `*_initialize`],
+    [Capa d'abstracció de plataforma],
+    [§4.1, §5.1], [@gregory2018 §1.6.5], [`platform/`],
+    [Superfície de finestra mitjançant extensió],
+    [§5.1], [@vulkanspec §40.1], [`vulkan/vulkan_platform.h`],
+
+    table.cell(colspan: 4)[_Gestió de memòria_],
+    [Reserva etiquetada i estadístiques d'ocupació],
+    [§5.2], [@gregory2018 §10.9], [`core/hmemory.c`],
+    [Assignador lineal sobre bloc fix],
+    [§4.4, §5.2], [@gregory2018 §6.2.1.2, @gingerbill_alloc], [`memory/linear_allocator.c`],
+    [Alineació de reserves (mancança documentada)],
+    [§5.2], [@gregory2018 §3.3.7, @drepper2007], [`core/hmemory.c`],
+    [Consulta de munts i tipus de memòria del dispositiu],
+    [§5.2, §6.3], [@vulkanspec §3.2, @riguer2015], [`vulkan/vulkan_backend.c`],
+    [Transferència mitjançant búfer intermedi],
+    [§5.2, §6.3], [@riguer2015, @sawicki_vma], [`vulkan/vulkan_backend.c`],
+
+    table.cell(colspan: 4)[_Renderitzador_],
+    [Separació entre part independent de l'API i implementació],
+    [§4.5], [@gregory2018 §1.6.5], [`renderer/renderer_types.inl`],
+    [Enviament asíncron: sense ordenació implícita],
+    [§2.2, §5.3], [@vulkanspec §3.2], [`vulkan/vulkan_backend.c`],
+    [Tanques: dependència de cua cap a l'amfitrió],
+    [§5.3], [@vulkanspec §7.3, @arntzen_sync], [`vulkan/vulkan_backend.c`],
+    [Semàfors: dependència entre operacions de cua],
+    [§5.3], [@vulkanspec §7.4, @arntzen_sync], [`vulkan/vulkan_backend.c`],
+    [Conjunts de descriptors ordenats per freqüència],
+    [§4.6, §5.2], [@vulkanspec §17.2], [`vulkan/shaders/vulkan_material_shader.c`],
+    [Constants d'inserció per a la dada de màxima freqüència],
+    [§5.2], [@vulkanspec §17.10], [`vulkan/shaders/vulkan_material_shader.c`],
+    [#f[Shaders] compilats a SPIR-V abans de l'execució],
+    [§2.4, §3.4], [@vulkanspec §9.2], [`post-build.sh`, `post-build.bat`],
+    [Capes de validació només en compilacions de depuració],
+    [§2.2, §5.1], [@olson2016, @vulkanspec §59], [`vulkan/vulkan_backend.c`],
+
+    table.cell(colspan: 4)[_Recursos_],
+    [Recompte de referències com a política de cicle de vida],
+    [§4.6, §5.4], [@gregory2018 §7.2.4], [`systems/texture_system.c` i anàlegs],
+    [Generacions com a detecció d'obsolescència],
+    [§4.6, §5.4], [@gregory2018 §16.5, @weissflog_handles], [`resources/resource_types.h`],
+    [Capa unificada de localització i càrrega d'actius],
+    [§5.4], [@gregory2018 §7.1], [`systems/resource_system.c`],
+    [Actiu dirigit per dades en fitxer de text],
+    [§5.4], [@gregory2018 §15.3], [`resources/loaders/material_loader.c`],
+
+    table.cell(colspan: 4)[_Instrumentació_],
+    [Perfilatge integrat per fases],
+    [§5.2, §6.1], [@gregory2018 §10.8], [`core/metrics.c`],
+    [Mesura de temps de dispositiu amb marques de temps],
+    [§5.2, §6.1], [@vulkanspec §23], [`vulkan/vulkan_backend.c`],
+  ),
+  caption: [Correspondència entre els mecanismes del motor, la seva
+    justificació a la memòria, la font que els fonamenta i el codi que els
+    implementa.],
+) <tab:annexa>
+
+Cal fer una precisió sobre l'abast d'aquesta taula. Recull els mecanismes que
+tenen una font primària identificable, que són els que el capítol 4 documenta
+com a decisions i els que el capítol 5 descriu en profunditat. No hi consten els
+subsistemes la implementació dels quals segueix la referència sense que cap
+decisió estructural pròpia n'hagi requerit fonamentació independent; aquests es
+recullen a l'inventari de §5.5 i la seva procedència es delimita al capítol 3.
+
+#heading(numbering: none, level: 2)[Annex B. Compilació i execució]
+
+Aquest annex recull el que cal per compilar i executar el motor sobre les dues
+plataformes en què s'ha desenvolupat. La informació es manté també al fitxer
+`README.md` del repositori.
+
+=== Requisits comuns
+
+/ Clang: El motor i l'aplicació de proves es compilen i s'enllacen exclusivament
+  amb aquest compilador. Les versions emprades consten a la @tab:maquinari.
+/ GNU Make: El procés de construcció es governa amb fitxers de construcció
+  separats per component i per sistema operatiu.
+/ Eines de Vulkan: Cal disposar del compilador de #f[shaders] `glslc`, que
+  tradueix el GLSL a SPIR-V. La via per obtenir-lo difereix entre plataformes i
+  es detalla més avall.
+
+=== Linux
+
+Calen, a més, els paquets de desenvolupament de X11 i XCB: `libx11-dev`,
+`libxcb1-dev`, `libx11-xcb-dev` i `libxkbcommon-x11-dev`, o els seus equivalents
+segons la distribució. Les eines de Vulkan poden provenir dels paquets de la
+distribució, cas en què no cal definir cap variable d'entorn.
+
+Des de l'arrel del repositori:
+
+#figure(
+  ```bash
+  ./build-all.sh     # compila motor, aplicació de proves i proves unitàries
+  ./post-build.sh    # compila els shaders a SPIR-V i copia assets/ a bin/
+  ./run.sh           # executa des de bin/, on es troba libengine.so
+  ```,
+  caption: [Construcció i execució sobre Linux.],
+) <codi:build-linux>
+
+L'aplicació s'ha d'executar des del directori `bin/`, ja que l'enllaçat cerca la
+biblioteca compartida al directori de treball. El script `run.sh` ja ho té en
+compte.
+
+=== Windows
+
+Cal el SDK de Vulkan de LunarG i que la variable d'entorn `VULKAN_SDK` estigui
+definida, atès que tant els fitxers de construcció com el pas posterior la fan
+servir per localitzar les eines.
+
+#figure(
+  ```bat
+  build-all.bat
+  post-build.bat
+  bin	estbed.exe
+  ```,
+  caption: [Construcció i execució sobre Windows.],
+) <codi:build-win>
+
+=== Notes d'ús
+
+El pas posterior a la construcció no s'executa automàticament, de manera que
+qualsevol modificació dels #f[shaders] sota `assets/shaders/` exigeix tornar-lo
+a executar perquè es recompilin.
+
+Les proves unitàries es generen com a executable independent a `bin/tests`.
+
+L'estratègia de transferència de dades cap a la memòria del dispositiu, emprada
+a l'experiment del capítol 6, se selecciona amb la variable d'entorn
+`HEFEST_DIRECT_UPLOAD`: amb valor `1` el motor intenta l'escriptura directa i,
+si el dispositiu no exposa el tipus de memòria necessari, torna a la via del
+búfer intermedi i ho registra. Sense definir, o amb valor `0`, empra sempre el
+búfer intermedi.
+
+#heading(numbering: none, level: 2)[Annex C. Registres de les mesures]
+
+#todo[Recollir aquí els dotze registres de les execucions del capítol 6 —sis per
+equip— amb una nota sobre com llegir-los: quina línia identifica l'estratègia
+efectiva, quina conté l'informe de temps i quina els totals de càrrega. Els de
+l'equip B encara són a l'altra màquina.]
