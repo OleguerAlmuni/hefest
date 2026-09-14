@@ -2739,11 +2739,13 @@ els dos equips descrits al capítol 3, i l'adaptació que ho va fer possible
 —documentada a §5.3— constitueix una de les aportacions pròpies del treball. En
 aquest sentit, la validació funcional és completa.
 
-El que no s'ha completat és el contrast del comportament. Les mesures del capítol
-6 provenen únicament de l'equip A, de memòria unificada. L'experiment està
-dissenyat per executar-se sobre tots dos i el motor selecciona l'estratègia
-consultant el dispositiu, però la meitat corresponent a la GPU dedicada resta
-pendent.
+El contrast del comportament també s'ha completat: l'experiment de §6.3 s'ha
+executat sobre les dues màquines, i el motor hi selecciona l'estratègia
+consultant el dispositiu en lloc de deduir-la de la seva categoria. El resultat
+matisa la premissa de partida, ja que la GPU dedicada també exposa memòria
+pròpia visible des de l'amfitrió, si bé acotada. El que queda fora d'abast és
+generalitzar: dues màquines permeten contrastar dues arquitectures, no
+caracteritzar-les.
 
 === Documentació de les decisions
 
@@ -2779,6 +2781,55 @@ control que permet atribuir-ne el resultat. Els tres restants es basen en mesure
 per #f[frame] i requereixen resoldre prèviament la variància descrita a §6.1.
 
 == Experiments
+
+=== Què es vol mesurar i per què
+
+El capítol 4 enuncia sis decisions estructurals i, per a cadascuna, el criteri
+que la fonamenta i el cost que se li atribueix. Aquests criteris i aquests costos
+provenen de les fonts o del raonament, no de l'observació: fins aquest punt de la
+memòria, cap d'ells no s'ha comprovat sobre el motor construït. L'avaluació neix
+precisament d'aquí, i el seu propòsit és sotmetre a mesura les afirmacions que
+fins ara es donaven per bones.
+
+Això delimita què té sentit mesurar. No es busca situar el motor respecte de cap
+altre —l'abast n'és massa desigual perquè la comparació signifiqui res— ni
+caracteritzar el maquinari, que és feina d'eines especialitzades. El que es
+busca és, per a cada decisió documentada, una magnitud que permeti dir si el que
+se n'esperava succeeix.
+
+Sota aquest criteri es van plantejar quatre experiments, cadascun lligat a una
+decisió concreta:
+
++ *Estratègia de transferència de dades cap al dispositiu.* Comprovar si la
+  còpia intermèdia que la bibliografia prescriu és necessària sobre les dues
+  arquitectures de memòria disponibles, o si el motor pot evitar-la consultant
+  els tipus de memòria que el dispositiu exposa. Es mesura amb acumuladors de
+  vida sencera, perquè les càrregues de recursos succeeixen una sola vegada.
+
++ *Repartiment del temps d'iteració entre fases.* Determinar quina fase del
+  bucle domina el temps de #f[frame] i quina part correspon al dispositiu, per
+  contrastar la valoració que el capítol 4 fa de l'enregistrament en un sol fil.
+
++ *Nombre de #f[frames] en vol.* Mesurar l'efecte del grau de solapament entre
+  amfitrió i dispositiu sobre el temps d'iteració, que és el paràmetre que
+  governa el model de sincronització descrit a §5.3.
+
++ *Ordenació dels recursos de #f[shader] per freqüència d'actualització.*
+  Verificar que l'ordenació que el capítol 4 adopta per recomanació de les dues
+  fonts té l'efecte que se li atribueix sobre el cost d'actualització.
+
+Només el primer s'ha completat, i és l'únic que aquesta secció reporta. La raó
+és la limitació documentada a §6.1: els tres restants depenen de mesures per
+#f[frame], i la variància entre execucions que l'absència d'un període
+d'escalfament introdueix supera les diferències que caldria distingir. El primer
+és, no per casualitat, l'únic dels quatre que es recolza en acumuladors de vida
+sencera i que, per tant, aquella limitació no afecta.
+
+Presentar-ne un de quatre és una mancança de l'avaluació i es consigna com a tal
+al capítol 7. Val la pena assenyalar, però, que el que s'ha completat no és el
+més fàcil dels quatre sinó el que contradiu una pràctica establerta, i que el
+que bloqueja els altres tres és un defecte conegut de l'instrument amb una
+solució també coneguda.
 
 === Búfer intermedi enfront d'escriptura directa
 
@@ -3124,11 +3175,31 @@ sincronització i l'assignació de memòria, qualsevol motor construït al damun
 necessita un assignador, un model explícit de ritme de #f[frames] i un sistema
 de recursos propi.
 
-El desenvolupament ho ha confirmat en la pràctica. Els tres subsistemes que
-ocupen més espai al capítol 5 són exactament aquests tres, i cap d'ells no
-respon a una preferència de disseny sinó a una obligació que l'API imposa. La
-correspondència entre el que les fonts prediuen i el que el motor ha necessitat
-és, per tant, un resultat i no una coincidència.
+El desenvolupament ho ha confirmat en la pràctica: són exactament els tres
+subsistemes als quals el capítol 5 dedica una secció pròpia, i l'Annex A en
+lliga cadascun amb la responsabilitat concreta que l'API delega i amb el fitxer
+que la implementa. Cap dels tres no respon a una preferència de disseny.
+
+Que aquesta correspondència sigui un resultat i no una coincidència es pot
+argumentar de dues maneres, i convé fer-ho perquè és la tesi que sosté la
+memòria sencera.
+
+La primera és de forma. Dues terceres parts dels punts on el motor crida l'API
+—110 de 161— serveixen per crear, consultar o destruir objectes, i només una
+tercera part per fer-los servir durant l'execució, tal com desglossa la secció
+sobre el cost de l'explicitud. Un motor sobre aquesta API no dedica la major
+part del seu codi gràfic a dibuixar, sinó a construir i mantenir l'estat que el
+model clàssic mantenia pel seu compte. Aquesta proporció no és una decisió del
+motor.
+
+La segona és externa al treball. Si l'assignador de memòria de dispositiu fos
+una preferència de disseny, cada motor n'adoptaria una de diferent; el que
+s'observa és que existeix una biblioteca d'assignació de memòria mantinguda pel
+fabricant i adoptada de manera generalitzada @sawicki_vma, cosa que només té
+sentit si tots els motors necessiten resoldre el mateix problema de la mateixa
+manera. La seva existència és, doncs, evidència a favor de la tesi i no en
+contra: confirma que el subsistema és obligatori, i que l'única elecció
+disponible és escriure'l o adoptar-ne un de fet.
 
 === Fonts independents que convergeixen
 
@@ -3206,6 +3277,14 @@ proporció a l'ambició del motor, sinó abans de dibuixar el primer triangle.
 Presentar una imatge a la pantalla exigeix cadena d'intercanvi, passada de
 renderitzat, canonada gràfica, conjunts de descriptors, tanques i semàfors,
 tinguin el motor dos objectes o dos-cents mil.
+
+El repartiment de les 161 crides a l'API ho quantifica. Setanta-una serveixen
+per crear objectes o consultar propietats del dispositiu i trenta-nou per
+destruir-los: cent deu de les cent seixanta-una, dues terceres parts, pertanyen
+a l'arrencada i al tancament. Només cinquanta-una s'executen durant el
+funcionament del motor, i d'aquestes la meitat són ordres
+d'enregistrament al #f[command buffer]. Dit altrament, dos terços de la superfície d'API que el
+motor fa servir existeixen per arribar a poder dibuixar, no per dibuixar.
 
 ==== Què s'hi guanya, segons les fonts
 
@@ -3390,9 +3469,10 @@ manera.
   a haver-los comprès, integrats, depurats i documentats, no a haver-los
   concebut, i el capítol 3 ho delimita explícitament.
 
-/ Avaluació incompleta: S'ha completat un dels quatre experiments plantejats, i
-  sobre un dels dos equips disponibles. L'avaluació caracteritza una arquitectura
-  de memòria en lloc de contrastar-ne dues, que era el disseny previst.
+/ Avaluació incompleta: S'ha completat un dels quatre experiments enumerats a
+  §6.3, si bé sobre els dos equips previstos. Els tres restants depenen de
+  mesures per #f[frame] i, per tant, del defecte de l'instrument que s'assenyala
+  tot seguit.
 
 / Instrument de mesura millorable: L'absència d'un període d'escalfament
   descartat inutilitza les mesures per #f[frame] per a distincions fines, i és
