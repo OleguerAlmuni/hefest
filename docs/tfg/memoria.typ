@@ -26,7 +26,7 @@
 )
 
 #set page(paper: "a4", margin: (x: 3cm, y: 2.8cm), numbering: "1")
-#set text(font: ("Libertinus Serif", "DejaVu Serif"), size: 11pt, lang: "ca")
+#set text(font: ("Libertinus Serif", "Liberation Serif"), size: 11pt, lang: "ca")
 #set par(justify: true, leading: 0.65em, first-line-indent: 1.2em)
 #set heading(numbering: "1.1")
 
