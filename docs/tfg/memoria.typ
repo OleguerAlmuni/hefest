@@ -120,9 +120,6 @@ seguir una implementació de referència i estudiar les fonts primàries donen
 resultats diferents; el treball documenta dos casos en què l'estudi de les fonts
 va modificar conclusions que s'haurien mantingut altrament.
 
-#todo[Verificar si la normativa exigeix el resum també en castellà i en anglès.
-Si és així, traduir-lo un cop el text català estigui tancat.]
-
 #heading(numbering: none, outlined: false)[Agraïments]
 #todo[Opcional segons la plantilla.]
 
@@ -3218,8 +3215,8 @@ relació entre el que aporten i el que costen.
   la identificació per nom al sistema de recursos, de manera que els sistemes
   especialitzats només aportin la interpretació de cada tipus.
 
-+ *Alineació als assignadors* i correcció del punt cec del comptador
-  d'ocupació. Són canvis petits amb efecte sobre la correcció i sobre la
++ *Alineació als assignadors i correcció del punt cec del comptador
+  d'ocupació.* Són canvis petits amb efecte sobre la correcció i sobre la
   fiabilitat de les mesures.
 
 #todo[Revisar aquest ordre abans d'entregar. Si entremig s'han completat la
@@ -3228,11 +3225,6 @@ resta.]
 
 // =============================================================================
 #heading(numbering: none)[Referències]
-
-#todo[Estil numerat [1], [2]... referenciat de manera creuada des del text.
-El fitxer `refs.bib` conté una base inicial. Verificar cada entrada: any,
-editorial, ISBN, URL i data de consulta. Val 0,5 punts, i és el criteri més
-barat de tot el rúbric.]
 
 #bibliography("refs.bib", style: "ieee", title: none)
 
