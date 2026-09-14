@@ -108,9 +108,10 @@ del #f[frame] tant al processador com al dispositiu. Durant el
 desenvolupament es van detectar i corregir quatre supòsits sobre el maquinari
 que impedien executar el motor sobre GPU integrades. L'avaluació empírica mostra,
 a més, que el patró de transferència de dades que la bibliografia presenta com a
-correcte resulta prescindible sobre arquitectures de memòria unificada, on
-evitar-lo redueix el temps de càrrega de geometria en un factor aproximat de
-setanta-cinc.
+correcte resulta prescindible quan el dispositiu exposa memòria pròpia visible
+des de l'amfitrió, condició que compleixen tant l'equip de memòria unificada com
+el de GPU dedicada: evitar-lo hi redueix el temps de càrrega de geometria en un
+factor de cent trenta-sis i de dos-cents vuitanta-dos, respectivament.
 
 Les conclusions principals són dues. La primera és que la forma d'un motor
 modern està determinada en bona mesura per l'API sobre la qual es construeix:
@@ -943,7 +944,10 @@ verificables a l'historial del repositori.
   sobrevivia a l'àmbit de l'objecte apuntat durant la creació de la cadena
   d'intercanvi, i un error en el pas de l'estat al subsistema de registre. Tots
   dos són comportament indefinit present també a l'altre equip, on no es
-  manifestaven.
+  manifestaven. S'hi afegeix un tercer defecte d'aquesta mena, detectat llegint
+  el codi en comptes d'executant-lo: la inicialització del sistema
+  d'esdeveniments netejava vuit bytes en lloc de la taula sencera, i només
+  funcionava perquè l'assignador lliura la memòria ja neta.
 
 / Corpus de documentació tècnica: Els 32 documents descrits a la secció anterior,
   amb la justificació i les limitacions de cada subsistema.
@@ -1773,7 +1777,7 @@ les recull.
     stroke: 0.4pt + rgb("#ccc"),
     table.header([], [*Subsistema*], [*Motiu de la posició*]),
     [1], [Esdeveniments], [L'entrada hi publica; ha d'existir abans que ningú s'hi subscrigui.],
-    [2], [Memòria], [Només instal·la el comptador: les reserves funcionen abans, sense comptabilitzar.],
+    [2], [Memòria], [Només instal·la el comptador: les reserves funcionen abans i es declaren en aquest punt.],
     [3], [Registre], [Depèn del sistema de fitxers, que no requereix inicialització, i de la sortida per consola de la plataforma, que funciona sense finestra.],
     [4], [Instrumentació], [Ha de precedir tot allò que pugui mesurar. Només depèn del rellotge absolut.],
     [5], [Entrada], [Requereix el sistema d'esdeveniments.],
@@ -1793,11 +1797,12 @@ que depenen de les textures, que depenen del renderitzador. Invertir qualsevol
 d'aquests parells produiria una dependència circular.
 
 Val la pena assenyalar dues posicions que semblen arbitràries i no ho són. El
-sistema de memòria ocupa la segona posició tot i que el d'esdeveniments, que el
-precedeix, ja hi reserva memòria de manera indirecta; això funciona perquè la
-inicialització d'aquest subsistema només instal·la el comptador d'ocupació, i
-les reserves anteriors succeeixen sense comptabilitzar-se. El registre ocupa la
-tercera tot i dependre de la plataforma, perquè la funció d'escriptura per
+sistema de memòria ocupa la segona posició tot i que abans d'arribar-hi ja s'han
+reservat l'estat de l'aplicació i el bloc de l'assignador; això funciona perquè
+la inicialització d'aquest subsistema només instal·la el comptador d'ocupació i
+la reserva de memòria no en depèn. Que les reserves anteriors quedin per sota
+del comptador és una conseqüència que §5.2 documenta i resol. El registre ocupa
+la tercera tot i dependre de la plataforma, perquè la funció d'escriptura per
 consola que utilitza no requereix que la finestra existeixi.
 
 === Cicle d'un #f[frame]
@@ -1981,7 +1986,12 @@ iteracions abans i no al que s'inicia. Sobre una finestra de cent vint mostres
 aquest desfasament és irrellevant, però convé tenir-lo present si mai
 s'interpreten mesures individuals.
 
-=== Limitacions
+=== Limitacions i defectes detectats
+
+El model té dues limitacions que persisteixen i dos defectes que es van detectar
+en documentar-lo i que s'han corregit. Les primeres afecten el disseny dels
+assignadors; els segons, la fiabilitat de l'instrument de mesura i la correcció
+d'una inicialització.
 
 Cap dels dos assignadors alinea les reserves: retornen l'adreça següent. Els
 estats dels subsistemes queden alineats per la mida de les estructures que els
@@ -1997,22 +2007,69 @@ que en reparteix l'estat no en comprova el valor abans de lliurar-lo al
 subsistema. Exhaurir els 64 MiB no produiria un diagnòstic sinó un accés a
 memòria nul·la.
 
-Hi ha, finalment, una limitació del comptador que es pot observar en el seu
-propi informe. Tant l'estat de l'aplicació com el bloc de 64 MiB es reserven
-abans que el subsistema de memòria s'inicialitzi —n'és l'ordre descrit a la
-@tab:ordre— de manera que cap dels dos hi apareix. L'informe emès just abans
-d'entrar al bucle principal declara poc més de quatre quilobytes en total, quan
-el procés en té reservats seixanta-quatre megabytes. El mateix passa amb les
-reserves que alguns subsistemes efectuen durant la seva pròpia inicialització,
-que queden fora del bloc de sistemes. La xifra de 64 MiB descriu, doncs, la
-capacitat reservada per a l'estat dels subsistemes, i l'informe descriu el que
-s'ha reservat després d'instal·lar el comptador; cap de les dues no és la
-petjada real del procés.
+El primer dels dos defectes afectava el comptador d'ocupació, i es va detectar
+llegint el seu propi informe. Tant l'estat de l'aplicació com el bloc de 64 MiB es reserven
+mitjançant la funció de reserva del motor abans que el subsistema de memòria
+s'inicialitzi —n'és l'ordre descrit a la @tab:ordre—, i aquesta funció només
+anota l'estadística si el comptador ja existeix. L'informe emès just abans
+d'entrar al bucle principal declarava, per tant, poc més de quatre quilobytes,
+quan el procés en tenia reservats seixanta-quatre megabytes.
 
-#todo[Valorar si val la pena corregir-ho movent la inicialització del comptador
-abans de la primera reserva, o bé comptabilitzant-hi explícitament els dos blocs
-inicials. És un canvi petit i faria que l'informe fos autoexplicatiu. Si es
-corregeix, cal actualitzar aquesta secció i les xifres del capítol 6.]
+L'ordre no és arbitrari ni es pot invertir sense més: l'estat del comptador
+resideix dins del bloc que hauria de comptabilitzar, de manera que el bloc ha
+d'existir abans que el comptador. És una dependència circular inherent al model
+d'inicialització en dues crides descrit a §5.1, i qualsevol correcció ha de
+triar quin dels dos extrems trenca. Situar l'estat del comptador fora de
+l'assignador —en memòria estàtica o en una reserva pròpia— l'excloria del model
+que la resta del motor segueix, i per una sola excepció.
+
+La correcció adoptada manté l'ordre i declara les dues reserves un cop el
+comptador és viu, mitjançant una funció que registra una reserva ja efectuada
+sense fer-ne cap. El @codi:comptador en mostra les crides, situades
+immediatament després de la segona inicialització del subsistema de memòria.
+
+#figure(
+  ```c
+  memory_system_initialize(&app_state->memory_system_memory_requirement, 0);
+  app_state->memory_system_state = linear_allocator_allocate(
+      &app_state->systems_allocator,
+      app_state->memory_system_memory_requirement);
+  memory_system_initialize(&app_state->memory_system_memory_requirement,
+                           app_state->memory_system_state);
+
+  // The two reservations above had to happen before the counter existed, so
+  // declare them now. Without this the report would show a few kilobytes
+  // while the process holds the whole systems block.
+  hmemory_account_untracked(sizeof(application_state), MEMORY_TAG_APPLICATION);
+  hmemory_account_untracked(systems_allocator_total_size,
+                            MEMORY_TAG_LINEAR_ALLOCATOR);
+  ```,
+  caption: [Declaració de les dues reserves anteriors al comptador. La funció no
+    reserva memòria: només n'anota una que ja s'ha produït, de manera que
+    l'informe cobreix tot el que el motor ha demanat al sistema operatiu.],
+) <codi:comptador>
+
+Amb la correcció aplicada, l'informe previ al bucle principal atribueix 64 MiB a
+l'etiqueta de l'assignador lineal, 264 B a l'estat de l'aplicació i poc més de
+quatre quilobytes a les reserves que els subsistemes efectuen durant la seva
+pròpia inicialització. La xifra passa a ser interpretable: recull tot el que el
+motor ha demanat al sistema operatiu.
+
+Continua sense ser la petjada del procés, i convé no confondre-les. Per una
+banda, els 64 MiB són la capacitat reservada per a l'estat dels subsistemes i no
+la part que se n'ocupa efectivament, que l'assignador coneix però no publica.
+Per l'altra, el controlador de l'API gràfica reserva memòria pel seu compte,
+fora de qualsevol camí que el motor instrumenti.
+
+El segon defecte és de naturalesa diferent i no té res a veure amb el comptador.
+La inicialització del sistema d'esdeveniments posava a zero el seu
+estat passant la mida del punter en lloc de la mida de l'estructura, de manera
+que netejava vuit bytes d'una taula de cent vint-i-vuit quilobytes. El defecte
+no s'havia manifestat mai, i la raó per la qual no ho feia és instructiva: la
+funció de reserva del motor lliura la memòria ja neta, i l'assignador lineal no
+reutilitza mai cap regió, de manera que l'estat era zero la primera vegada que
+s'utilitzava. El codi era incorrecte i funcionava perquè una propietat d'un
+altre component el cobria. S'ha corregit passant la mida de l'estructura.
 
 == Sincronització CPU/GPU i el bucle de #f[frame]
 
@@ -2533,15 +2590,15 @@ llisca, de manera que l'informe que es consulta reflecteix els cent vint
 produeix una variància entre execucions prou gran com perquè les mesures per
 #f[frame] no permetin distingir configuracions que difereixen poc.
 
-La tercera afecta les xifres d'ocupació de memòria. Com s'ha documentat al
-capítol 5, el comptador s'inicialitza després que s'hagin reservat l'estat de
-l'aplicació i el bloc de seixanta-quatre megabytes, de manera que cap dels dos
-hi apareix. Les xifres d'ocupació que reporta són, per tant, incompletes i no
-s'utilitzen com a resultat en aquest capítol.
-
-#todo[Si es corregeix el punt cec del comptador, tal com suggereix el capítol 5,
-cal actualitzar aquest paràgraf i considerar si val la pena afegir un experiment
-sobre ocupació de memòria.]
+La tercera afecta les xifres d'ocupació de memòria. El comptador s'inicialitza
+després que s'hagin reservat l'estat de l'aplicació i el bloc de seixanta-quatre
+megabytes, i durant bona part del desenvolupament cap dels dos no hi apareixia.
+La correcció documentada a §5.2 declara totes dues reserves un cop el comptador
+és viu, de manera que ara l'informe recull tot el que el motor demana al sistema
+operatiu. El que continua sense mesurar és quina part del bloc s'ocupa
+efectivament i què reserva el controlador de l'API gràfica pel seu compte; per
+aquesta raó les xifres d'ocupació es donen com a descripció del model de memòria
+al capítol 5 i no s'utilitzen com a resultat experimental en aquest capítol.
 
 == Assoliment dels objectius funcionals
 
@@ -2654,10 +2711,13 @@ són decisions de qui el condueix. L'objectiu, formulat com a control sobre la
 ubicació i el cicle de vida, s'ha assolit.
 
 Es consigna com a assolit amb limitacions per dues raons documentades a §5.2. La
-primera és que cap dels dos assignadors alinea les reserves. La segona és que el
-comptador d'ocupació no comptabilitza ni l'estat de l'aplicació ni el bloc
-principal, de manera que les xifres que reporta són incompletes. Cap de les dues
-invalida el model, però totes dues afecten la qualitat de la seva implementació.
+primera és que cap dels dos assignadors alinea les reserves. La segona és que
+l'assignador lineal no comprova el punter nul que retorna en exhaurir-se abans
+de lliurar-lo al subsistema, de manera que esgotar el bloc produiria un accés a
+memòria nul·la en lloc d'un diagnòstic. Cap de les dues invalida el model, però
+totes dues afecten la qualitat de la seva implementació. El punt cec del
+comptador d'ocupació, que hi figurava com a tercera limitació, s'ha corregit en
+el curs de la redacció d'aquesta memòria.
 
 === Validació sobre les dues arquitectures de memòria
 
@@ -2935,9 +2995,25 @@ indefinit que una configuració concreta de famílies de cues posa al descobert.
 Aquest capítol n'afegeix un setè, de naturalesa diferent dels anteriors: el motor
 no fallava en cap dels dos equips, simplement hi dedicava temps innecessari.
 
-És, per tant, el cas més interessant de tots. Els sis anteriors es van detectar
-perquè el motor no arrencava o es tancava de manera anòmala; aquest només es
-podia detectar mesurant.
+Val la pena aturar-se en com es va detectar cadascun, perquè el conjunt dibuixa
+tres vies independents i cap no cobreix el que cobreixen les altres. Els sis
+primers es van fer visibles executant el motor sobre maquinari que no era el de
+desenvolupament: no arrencava o es tancava de manera anòmala. El setè no es
+podia detectar així, perquè no produïa cap símptoma; només apareix en mesurar.
+
+Hi ha una tercera via, i el capítol 5 en recull el cas. La inicialització del
+sistema d'esdeveniments netejava vuit bytes d'una taula de cent vint-i-vuit
+quilobytes, i no havia fallat mai perquè l'assignador lliura la memòria ja neta
+i no en reutilitza cap regió. Ni executar el motor en un altre equip ni mesurar
+l'haurien revelat: una propietat d'un altre component el cobria completament.
+Va aparèixer en llegir el codi per descriure'l en aquesta memòria, i el fet que
+funcionés no el feia menys defecte: un programa que és correcte per accident no
+es distingeix d'un de correcte fins que l'accident canvia.
+
+El balanç metodològic és, doncs, que les tres vies són complementàries: executar
+sobre maquinari divers detecta els supòsits sobre el dispositiu, mesurar detecta
+el treball innecessari que no falla, i llegir el codi detecta el que està cobert
+per un accident d'implementació.
 
 === L'asimetria entre amfitrió i dispositiu
 
@@ -3168,8 +3244,8 @@ rellevants, totes documentades al lloc corresponent.
   alliberar ni reutilitzar regions de manera selectiva.
 
 / Assignadors sense alineació: Cap dels dos assignadors de l'amfitrió alinea les
-  reserves, i el comptador d'ocupació no comptabilitza els dos blocs reservats
-  abans de la seva inicialització.
+  reserves, i l'assignador lineal no comprova el punter nul que retorna en
+  exhaurir-se.
 
 / Unificació parcial de recursos: El sistema de recursos unifica la localització
   i la càrrega, però tres subsistemes mantenen cadascun la seva taula de
@@ -3215,9 +3291,8 @@ relació entre el que aporten i el que costen.
   la identificació per nom al sistema de recursos, de manera que els sistemes
   especialitzats només aportin la interpretació de cada tipus.
 
-+ *Alineació als assignadors i correcció del punt cec del comptador
-  d'ocupació.* Són canvis petits amb efecte sobre la correcció i sobre la
-  fiabilitat de les mesures.
++ *Alineació als assignadors i comprovació del punter nul.* Són canvis petits
+  amb efecte directe sobre la correcció.
 
 #todo[Revisar aquest ordre abans d'entregar. Si entremig s'han completat la
 primera o la segona línia, cal moure-les a la secció de resultats i reordenar la
