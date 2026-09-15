@@ -73,15 +73,22 @@
 
 #align(center)[
   #v(0.6cm)
-  #image("figures/logo_lasalle.png", width: 6.2cm)
-  #v(1.6cm)
+  #image("figures/logo_lasalle.png", width: 4.2cm)
+  #v(1.4cm)
   #text(size: 14pt)[Escola Tècnica Superior d'Enginyeria La Salle]
   #v(1.4cm)
   #text(size: 14pt)[Treball Final de Grau]
   #v(1.4cm)
   #text(size: 14pt)[Grau en Enginyeria Multimèdia]
-  #v(2.6cm)
-  #text(size: 19pt, weight: "bold")[#titol]
+  #v(2.2cm)
+  // El recuadre del títol reprodueix el rectangle de la plantilla: sense
+  // farciment i amb el traç de color #386300, tal com el declara el document.
+  #block(
+    width: 100%,
+    stroke: 0.75pt + rgb("#386300"),
+    inset: (x: 14pt, y: 16pt),
+    text(size: 19pt, weight: "bold")[#titol],
+  )
   #v(1fr)
 ]
 
@@ -97,41 +104,131 @@
 #pagebreak()
 
 // -----------------------------------------------------------------------------
-#heading(numbering: none, outlined: false)[Resum]
+// -----------------------------------------------------------------------------
+// Segona pàgina de la plantilla oficial: acta de l'examen. Es reprodueix tal com
+// és, amb els camps en blanc, perquè el tribunal l'ompli el dia de la defensa.
+#[
+#set par(first-line-indent: 0em)
+
+#align(center)[
+  #v(1.8cm)
+  #block(
+    width: 100%,
+    stroke: 0.5pt + black,
+    inset: (x: 10pt, y: 12pt),
+    text(size: 14pt, weight: "bold")[
+      ACTA DE L'EXAMEN\ DEL TREBALL FI DE CARRERA
+    ],
+  )
+]
+
+#v(1.2cm)
+
+Reunit el Tribunal qualificador en el dia de la data, l'alumne
+
+#v(0.7cm)
+#h(1.2cm) D.
+#v(0.7cm)
+
+va exposar el seu Treball de Fi de Carrera, el qual va tractar sobre el tema
+següent:
+
+#v(2.4cm)
+
+Acabada l'exposició i contestades per part de l'alumne les objeccions formulades
+pels Srs. membres del tribunal, aquest valorà l'esmentat Treball amb la
+qualificació de
+
+#v(0.5cm)
+#block(width: 100%, height: 1.5cm, stroke: 0.5pt + black)
+#v(1cm)
+
+Barcelona,
+
+#v(1.8cm)
+
+#grid(
+  columns: (1fr, 1fr),
+  align: (left, left),
+  [VOCAL DEL TRIBUNAL], [VOCAL DEL TRIBUNAL],
+)
+
+#v(1.8cm)
+#align(center)[PRESIDENT DEL TRIBUNAL]
+]
+
+#pagebreak()
+
+// Els tres resums han de cabre en una sola pàgina, de manera que no fan servir
+// el nivell 1 de títol, que força salt de pàgina i ocupa 17 pt.
+#let resum-titol(x) = block(
+  above: 0em, below: 0.7em, text(size: 13pt, weight: "bold", x),
+)
+
+#resum-titol[Resum]
 
 El desenvolupament de videojocs es fa avui majoritàriament sobre motors
-comercials, que es prenen com una eina donada. Aquesta és també la via per la
-qual s'hi accedeix durant la formació, de manera que el funcionament intern del
-motor —com arriben les dades a la memòria del dispositiu gràfic, com se
-sincronitzen el processador i la GPU, o per què el bucle principal té les fases
-que té— queda fora de l'abast del que s'estudia.
+comercials, que es prenen com una eina donada, de manera que el seu funcionament
+intern queda fora del que s'estudia durant la formació. Aquest treball dissenya,
+implementa i avalua un motor de jocs escrit en C amb un renderitzador basat en
+Vulkan, documentant cada decisió estructural contra les fonts primàries que la
+fonamenten.
 
-L'objectiu d'aquest treball és dissenyar, implementar i avaluar un motor de jocs
-escrit en C amb un renderitzador basat en Vulkan, documentant cada decisió
-estructural contra les fonts primàries que la fonamenten: la bibliografia
-d'arquitectura de motors i l'especificació de l'API gràfica.
+El resultat és un motor funcional sobre Windows i Linux, amb capa d'abstracció de
+plataforma, gestió explícita de memòria, càrrega i il·luminació de recursos des
+de disc i una capa d'instrumentació pròpia. L'avaluació empírica mostra que el
+patró de transferència de dades que la bibliografia presenta com a correcte
+resulta prescindible quan el dispositiu exposa memòria visible des de
+l'amfitrió: evitar-lo redueix el temps de càrrega de geometria en un factor de
+136 i de 282 sobre els dos equips provats. La conclusió principal és que la
+forma d'un motor modern està determinada en bona mesura per l'API sobre la qual
+es construeix.
 
-El resultat és un motor funcional sobre Windows i Linux, amb una capa
-d'abstracció de plataforma, un model de gestió de memòria en què la ubicació i
-el cicle de vida de l'estat de cada subsistema són decisions del motor, un
-renderitzador que carrega geometria, textures i materials des de disc i els
-il·lumina, i una capa d'instrumentació pròpia que mesura el cost de cada fase
-del #f[frame] tant al processador com al dispositiu. Durant el
-desenvolupament es van detectar i corregir quatre supòsits sobre el maquinari
-que impedien executar el motor sobre GPU integrades. L'avaluació empírica mostra,
-a més, que el patró de transferència de dades que la bibliografia presenta com a
-correcte resulta prescindible quan el dispositiu exposa memòria pròpia visible
-des de l'amfitrió, condició que compleixen tant l'equip de memòria unificada com
-el de GPU dedicada: evitar-lo hi redueix el temps de càrrega de geometria en un
-factor de cent trenta-sis i de dos-cents vuitanta-dos, respectivament.
+#v(0.9em)
+#[
+#set text(lang: "es")
+#resum-titol[Resumen]
 
-Les conclusions principals són dues. La primera és que la forma d'un motor
-modern està determinada en bona mesura per l'API sobre la qual es construeix:
-els subsistemes que el treball ha necessitat són exactament els que les fonts
-prediuen a partir de com l'API reparteix responsabilitats. La segona és que
-seguir una implementació de referència i estudiar les fonts primàries donen
-resultats diferents; el treball documenta dos casos en què l'estudi de les fonts
-va modificar conclusions que s'haurien mantingut altrament.
+El desarrollo de videojuegos se hace hoy mayoritariamente sobre motores
+comerciales, que se toman como una herramienta dada, de modo que su
+funcionamiento interno queda fuera de lo que se estudia durante la formación.
+Este trabajo diseña, implementa y evalúa un motor de juegos escrito en C con un
+renderizador basado en Vulkan, documentando cada decisión estructural frente a
+las fuentes primarias que la fundamentan.
+
+El resultado es un motor funcional sobre Windows y Linux, con capa de
+abstracción de plataforma, gestión explícita de memoria, carga e iluminación de
+recursos desde disco y una capa de instrumentación propia. La evaluación
+empírica muestra que el patrón de transferencia de datos que la bibliografía
+presenta como correcto resulta prescindible cuando el dispositivo expone memoria
+visible desde el anfitrión: evitarlo reduce el tiempo de carga de geometría en
+un factor de 136 y de 282 en los dos equipos probados. La conclusión principal
+es que la forma de un motor moderno está determinada en buena medida por la API
+sobre la que se construye.
+]
+
+#v(0.9em)
+#[
+#set text(lang: "en")
+#resum-titol[Abstract]
+
+Game development today is carried out mostly on commercial engines, which are
+taken as a given tool, so that their internal workings fall outside what is
+studied during a degree. This work designs, implements and evaluates a game
+engine written in C with a Vulkan-based renderer, documenting every structural
+decision against the primary sources that support it.
+
+The result is a working engine on Windows and Linux, with a platform
+abstraction layer, explicit memory management, loading and lighting of assets
+from disk, and its own instrumentation layer. The empirical evaluation shows
+that the data transfer pattern the literature presents as correct is
+dispensable when the device exposes memory visible from the host: avoiding it
+reduces geometry upload time by a factor of 136 and 282 on the two machines
+tested. The main conclusion is that the shape of a modern engine is largely
+determined by the API it is built upon.
+]
+
+#pagebreak()
 
 #heading(numbering: none, outlined: false)[Agraïments]
 
