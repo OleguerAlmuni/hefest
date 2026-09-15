@@ -85,7 +85,7 @@
 // plantilla; l'espaiat automàtic entre blocs s'hi sumaria.
 #set block(spacing: 0em)
 
-#h(0.5cm) #image("figures/logo_lasalle.png", width: 4.17cm)
+#pad(left: 0.78cm, image("figures/logo_lasalle.png", width: 4.17cm))
 
 #v(1.29cm)
 #h(0.78cm) #text(weight: "bold")[Escola Tècnica Superior d'Enginyeria La Salle]
