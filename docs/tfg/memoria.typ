@@ -169,76 +169,120 @@ Barcelona,
 
 #pagebreak()
 
-// Els tres resums han de cabre en una sola pàgina, de manera que no fan servir
-// el nivell 1 de títol, que força salt de pàgina i ocupa 17 pt.
-#let resum-titol(x) = block(
-  above: 0em, below: 0.7em, text(size: 13pt, weight: "bold", x),
-)
-
-#resum-titol[Resum]
+#heading(numbering: none, outlined: false)[Resum]
 
 El desenvolupament de videojocs es fa avui majoritàriament sobre motors
-comercials, que es prenen com una eina donada, de manera que el seu funcionament
-intern queda fora del que s'estudia durant la formació. Aquest treball dissenya,
-implementa i avalua un motor de jocs escrit en C amb un renderitzador basat en
-Vulkan, documentant cada decisió estructural contra les fonts primàries que la
-fonamenten.
+comercials, que es prenen com una eina donada. Aquesta és també la via per la
+qual s'hi accedeix durant la formació, de manera que el funcionament intern del
+motor —com arriben les dades a la memòria del dispositiu gràfic, com se
+sincronitzen el processador i la GPU, o per què el bucle principal té les fases
+que té— queda fora de l'abast del que s'estudia.
 
-El resultat és un motor funcional sobre Windows i Linux, amb capa d'abstracció de
-plataforma, gestió explícita de memòria, càrrega i il·luminació de recursos des
-de disc i una capa d'instrumentació pròpia. L'avaluació empírica mostra que el
-patró de transferència de dades que la bibliografia presenta com a correcte
-resulta prescindible quan el dispositiu exposa memòria visible des de
-l'amfitrió: evitar-lo redueix el temps de càrrega de geometria en un factor de
-136 i de 282 sobre els dos equips provats. La conclusió principal és que la
-forma d'un motor modern està determinada en bona mesura per l'API sobre la qual
-es construeix.
+L'objectiu d'aquest treball és dissenyar, implementar i avaluar un motor de jocs
+escrit en C amb un renderitzador basat en Vulkan, documentant cada decisió
+estructural contra les fonts primàries que la fonamenten: la bibliografia
+d'arquitectura de motors i l'especificació de l'API gràfica.
 
-#v(0.9em)
+El resultat és un motor funcional sobre Windows i Linux, amb una capa
+d'abstracció de plataforma, un model de gestió de memòria en què la ubicació i
+el cicle de vida de l'estat de cada subsistema són decisions del motor, un
+renderitzador que carrega geometria, textures i materials des de disc i els
+il·lumina, i una capa d'instrumentació pròpia que mesura el cost de cada fase
+del #f[frame] tant al processador com al dispositiu. Durant el
+desenvolupament es van detectar i corregir quatre supòsits sobre el maquinari
+que impedien executar el motor sobre GPU integrades. L'avaluació empírica mostra,
+a més, que el patró de transferència de dades que la bibliografia presenta com a
+correcte resulta prescindible quan el dispositiu exposa memòria pròpia visible
+des de l'amfitrió, condició que compleixen tant l'equip de memòria unificada com
+el de GPU dedicada: evitar-lo hi redueix el temps de càrrega de geometria en un
+factor de cent trenta-sis i de dos-cents vuitanta-dos, respectivament.
+
+Les conclusions principals són dues. La primera és que la forma d'un motor
+modern està determinada en bona mesura per l'API sobre la qual es construeix:
+els subsistemes que el treball ha necessitat són exactament els que les fonts
+prediuen a partir de com l'API reparteix responsabilitats. La segona és que
+seguir una implementació de referència i estudiar les fonts primàries donen
+resultats diferents; el treball documenta dos casos en què l'estudi de les fonts
+va modificar conclusions que s'haurien mantingut altrament.
+
+#heading(numbering: none, outlined: false)[Resumen]
+
 #[
 #set text(lang: "es")
-#resum-titol[Resumen]
 
 El desarrollo de videojuegos se hace hoy mayoritariamente sobre motores
-comerciales, que se toman como una herramienta dada, de modo que su
-funcionamiento interno queda fuera de lo que se estudia durante la formación.
-Este trabajo diseña, implementa y evalúa un motor de juegos escrito en C con un
-renderizador basado en Vulkan, documentando cada decisión estructural frente a
-las fuentes primarias que la fundamentan.
+comerciales, que se toman como una herramienta dada. Esta es también la vía por
+la que se accede a él durante la formación, de modo que el funcionamiento
+interno del motor —cómo llegan los datos a la memoria del dispositivo gráfico,
+cómo se sincronizan el procesador y la GPU, o por qué el bucle principal tiene
+las fases que tiene— queda fuera del alcance de lo que se estudia.
 
-El resultado es un motor funcional sobre Windows y Linux, con capa de
-abstracción de plataforma, gestión explícita de memoria, carga e iluminación de
-recursos desde disco y una capa de instrumentación propia. La evaluación
-empírica muestra que el patrón de transferencia de datos que la bibliografía
-presenta como correcto resulta prescindible cuando el dispositivo expone memoria
-visible desde el anfitrión: evitarlo reduce el tiempo de carga de geometría en
-un factor de 136 y de 282 en los dos equipos probados. La conclusión principal
-es que la forma de un motor moderno está determinada en buena medida por la API
-sobre la que se construye.
+El objetivo de este trabajo es diseñar, implementar y evaluar un motor de juegos
+escrito en C con un renderizador basado en Vulkan, documentando cada decisión
+estructural frente a las fuentes primarias que la fundamentan: la bibliografía
+de arquitectura de motores y la especificación de la API gráfica.
+
+El resultado es un motor funcional sobre Windows y Linux, con una capa de
+abstracción de plataforma, un modelo de gestión de memoria en el que la
+ubicación y el ciclo de vida del estado de cada subsistema son decisiones del
+motor, un renderizador que carga geometría, texturas y materiales desde disco y
+los ilumina, y una capa de instrumentación propia que mide el coste de cada fase
+del #f[frame] tanto en el procesador como en el dispositivo. Durante el
+desarrollo se detectaron y corrigieron cuatro supuestos sobre el hardware que
+impedían ejecutar el motor sobre GPU integradas. La evaluación empírica muestra,
+además, que el patrón de transferencia de datos que la bibliografía presenta
+como correcto resulta prescindible cuando el dispositivo expone memoria propia
+visible desde el anfitrión, condición que cumplen tanto el equipo de memoria
+unificada como el de GPU dedicada: evitarlo reduce el tiempo de carga de
+geometría en un factor de ciento treinta y seis y de doscientos ochenta y dos,
+respectivamente.
+
+Las conclusiones principales son dos. La primera es que la forma de un motor
+moderno está determinada en buena medida por la API sobre la que se construye:
+los subsistemas que el trabajo ha necesitado son exactamente los que las fuentes
+predicen a partir de cómo la API reparte responsabilidades. La segunda es que
+seguir una implementación de referencia y estudiar las fuentes primarias dan
+resultados distintos; el trabajo documenta dos casos en los que el estudio de
+las fuentes modificó conclusiones que se habrían mantenido de otro modo.
 ]
 
-#v(0.9em)
+#heading(numbering: none, outlined: false)[Abstract]
+
 #[
 #set text(lang: "en")
-#resum-titol[Abstract]
 
 Game development today is carried out mostly on commercial engines, which are
-taken as a given tool, so that their internal workings fall outside what is
-studied during a degree. This work designs, implements and evaluates a game
-engine written in C with a Vulkan-based renderer, documenting every structural
-decision against the primary sources that support it.
+taken as a given tool. This is also the way they are approached during a degree,
+so that the engine's inner workings —how data reaches the memory of the graphics
+device, how the processor and the GPU are synchronised, or why the main loop has
+the phases it has— fall outside the scope of what is studied.
 
-The result is a working engine on Windows and Linux, with a platform
-abstraction layer, explicit memory management, loading and lighting of assets
-from disk, and its own instrumentation layer. The empirical evaluation shows
-that the data transfer pattern the literature presents as correct is
-dispensable when the device exposes memory visible from the host: avoiding it
-reduces geometry upload time by a factor of 136 and 282 on the two machines
-tested. The main conclusion is that the shape of a modern engine is largely
-determined by the API it is built upon.
+The aim of this work is to design, implement and evaluate a game engine written
+in C with a Vulkan-based renderer, documenting every structural decision against
+the primary sources that support it: the game engine architecture literature and
+the graphics API specification.
+
+The result is a working engine on Windows and Linux, with a platform abstraction
+layer, a memory management model in which the location and lifetime of each
+subsystem's state are decisions of the engine, a renderer that loads geometry,
+textures and materials from disk and lights them, and its own instrumentation
+layer that measures the cost of every frame phase on both the processor and the
+device. During development, four assumptions about the hardware were found and
+corrected that prevented the engine from running on integrated GPUs. The
+empirical evaluation further shows that the data transfer pattern the literature
+presents as correct is dispensable when the device exposes its own memory
+visible from the host, a condition met by both the unified memory machine and
+the dedicated GPU one: avoiding it reduces geometry upload time by a factor of
+one hundred and thirty-six and of two hundred and eighty-two, respectively.
+
+There are two main conclusions. The first is that the shape of a modern engine
+is largely determined by the API it is built upon: the subsystems this work has
+needed are exactly those the sources predict from how the API distributes
+responsibilities. The second is that following a reference implementation and
+studying the primary sources yield different results; this work documents two
+cases in which studying the sources changed conclusions that would otherwise
+have stood.
 ]
-
-#pagebreak()
 
 #heading(numbering: none, outlined: false)[Agraïments]
 
