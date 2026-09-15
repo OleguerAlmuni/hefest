@@ -71,90 +71,100 @@
 // =============================================================================
 #set page(numbering: none)
 
-#align(center)[
-  #v(0.6cm)
-  #image("figures/logo_lasalle.png", width: 4.2cm)
-  #v(1.4cm)
-  #text(size: 14pt)[Escola Tècnica Superior d'Enginyeria La Salle]
-  #v(1.4cm)
-  #text(size: 14pt)[Treball Final de Grau]
-  #v(1.4cm)
-  #text(size: 14pt)[Grau en Enginyeria Multimèdia]
-  #v(2.2cm)
-  // El recuadre del títol reprodueix el rectangle de la plantilla: sense
-  // farciment i amb el traç de color #386300, tal com el declara el document.
-  #block(
-    width: 100%,
-    stroke: 0.75pt + rgb("#386300"),
-    inset: (x: 14pt, y: 16pt),
-    text(size: 19pt, weight: "bold")[#titol],
-  )
-  #v(1fr)
+// -----------------------------------------------------------------------------
+// Portada i acta segons la plantilla oficial de l'escola (GM, setembre de 2026).
+// Les posicions i el color del requadre s'han mesurat sobre el document original;
+// la plantilla és en lletra de pal sec, de manera que aquestes dues pàgines no
+// segueixen la tipografia del cos del document.
+#let blau-plantilla = rgb("#2C588F")
+
+#[
+#set text(font: ("Liberation Sans", "DejaVu Sans"), size: 11pt)
+#set par(first-line-indent: 0em, justify: false, leading: 0.65em)
+// Les distàncies verticals es donen amb #v explícits, mesurats sobre la
+// plantilla; l'espaiat automàtic entre blocs s'hi sumaria.
+#set block(spacing: 0em)
+
+#h(0.5cm) #image("figures/logo_lasalle.png", width: 4.17cm)
+
+#v(1.29cm)
+#h(0.78cm) #text(weight: "bold")[Escola Tècnica Superior d'Enginyeria La Salle]
+
+#v(1.24cm)
+#h(0.78cm) Treball Final de Grau
+
+#v(1.35cm)
+#h(0.78cm) Grau en Enginyeria Multimèdia
+
+#v(1.98cm)
+#h(0.57cm)
+#box(
+  width: 13.36cm,
+  height: 7.89cm,
+  stroke: 1pt + blau-plantilla,
+  inset: (x: 12pt, y: 12pt),
+)[
+  #set align(center + horizon)
+  #text(size: 17pt, weight: "bold")[#titol]
 ]
 
-#grid(
-  columns: (1fr, 1fr),
-  row-gutter: 0.8em,
-  align: left,
-  [Alumne], [Professor Ponent],
-  [#nom-autor], [#nom-ponent],
-)
-#v(1.2cm)
+#v(2.23cm)
+#h(1.24cm)
+#box(width: 8.7cm)[Alumne]
+#box[Professor Ponent]
+
+#v(0.5cm)
+#h(1.24cm)
+#box(width: 8.7cm)[#nom-autor]
+#box[#nom-ponent]
+]
 
 #pagebreak()
 
 // -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-// Segona pàgina de la plantilla oficial: acta de l'examen. Es reprodueix tal com
-// és, amb els camps en blanc, perquè el tribunal l'ompli el dia de la defensa.
+// Segona pàgina de la plantilla: acta de l'examen. Es reprodueix amb els camps
+// en blanc, perquè el tribunal l'ompli el dia de la defensa.
 #[
-#set par(first-line-indent: 0em)
+#set text(font: ("Liberation Sans", "DejaVu Sans"), size: 10pt)
+#set par(first-line-indent: 0em, justify: false, leading: 0.65em)
+#set block(spacing: 0em)
 
-#align(center)[
-  #v(1.8cm)
-  #block(
-    width: 100%,
-    stroke: 0.5pt + black,
-    inset: (x: 10pt, y: 12pt),
-    text(size: 14pt, weight: "bold")[
-      ACTA DE L'EXAMEN\ DEL TREBALL FI DE CARRERA
-    ],
-  )
+#v(1.4cm)
+#block(
+  width: 100%,
+  stroke: (top: 2.5pt + black, bottom: 2.5pt + black),
+  inset: (y: 7pt),
+)[
+  #set align(center)
+  #text(size: 14pt, weight: "bold")[ACTA DE L'EXAMEN \ DEL TREBALL FI DE CARRERA]
 ]
 
-#v(1.2cm)
-
+#v(1.3cm)
 Reunit el Tribunal qualificador en el dia de la data, l'alumne
 
 #v(0.7cm)
-#h(1.2cm) D.
+#h(0.8cm) D.
+
 #v(0.7cm)
+va exposar el seu Treball de Fi de Carrera, el qual va tractar sobre el tema següent:
 
-va exposar el seu Treball de Fi de Carrera, el qual va tractar sobre el tema
-següent:
-
-#v(2.4cm)
-
+#v(3.1cm)
 Acabada l'exposició i contestades per part de l'alumne les objeccions formulades
 pels Srs. membres del tribunal, aquest valorà l'esmentat Treball amb la
 qualificació de
 
-#v(0.5cm)
-#block(width: 100%, height: 1.5cm, stroke: 0.5pt + black)
-#v(1cm)
+#v(0.9cm)
+#h(3.4cm) #box(width: 8.1cm, height: 1.05cm, stroke: 0.5pt + rgb("#999"))
 
+#v(1.4cm)
 Barcelona,
 
-#v(1.8cm)
+#v(1.9cm)
+#box(width: 9.4cm)[VOCAL DEL TRIBUNAL]
+#box[VOCAL DEL TRIBUNAL]
 
-#grid(
-  columns: (1fr, 1fr),
-  align: (left, left),
-  [VOCAL DEL TRIBUNAL], [VOCAL DEL TRIBUNAL],
-)
-
-#v(1.8cm)
-#align(center)[PRESIDENT DEL TRIBUNAL]
+#v(2.3cm)
+#h(4.4cm) PRESIDENT DEL TRIBUNAL
 ]
 
 #pagebreak()
